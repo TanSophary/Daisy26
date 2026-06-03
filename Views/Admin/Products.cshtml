@@ -1,0 +1,125 @@
+﻿@{
+    ViewData["Title"] = "Manage Products";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var products = ViewBag.Products as List<OnlineShop.Models.Product> ?? new();
+    int page = ViewBag.Page, totalPages = ViewBag.TotalPages, total = ViewBag.Total;
+}
+
+<div class="admin-card">
+    <div class="admin-card-header">
+        <div>
+            <div class="admin-card-title">
+                <i class="fas fa-shopping-bag me-2" style="color:var(--sky-500)"></i>
+                All Products <span style="color:var(--muted);font-weight:400;font-size:0.85rem">(@total total)</span>
+            </div>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <form method="get" class="d-flex gap-2">
+                <input type="text" name="search" class="admin-search"
+                       placeholder="Search name or code..." value="@ViewBag.Search" />
+                <button type="submit" class="btn-admin-primary">
+                    <i class="fas fa-search"></i>
+                </button>
+            </form>
+            <a asp-action="CreateProduct" class="btn-admin-primary">
+                <i class="fas fa-plus"></i> Add Product
+            </a>
+        </div>
+    </div>
+
+    <div style="overflow-x:auto">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Image</th>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Product Code</th>
+                    <th>Price</th>
+                    <th>Stock</th>
+                    <th>Featured</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var p in products)
+                {
+                    <tr>
+                        <td>
+                            <img src="@(p.ImageUrl ?? "https://via.placeholder.com/48")"
+                                 class="product-thumb" alt="@p.Name" />
+                        </td>
+                        <td style="font-weight:700;max-width:200px">
+                            <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">@p.Name</div>
+                            @if (p.OldPrice.HasValue)
+                            {
+                                <span style="font-size:0.72rem;color:#ef4444;font-weight:700">SALE</span>
+                            }
+                        </td>
+                        <td style="color:var(--muted);font-size:0.85rem">@p.Category?.Name</td>
+                        <td style="font-family:monospace;font-size:0.82rem;color:var(--muted)">@p.ProductCode</td>
+                        <td style="font-weight:700;color:var(--sky-600)">$@p.Price.ToString("0.00")</td>
+                        <td>
+                            <span class="badge-status @(p.Stock > 10 ? "badge-delivered" : p.Stock > 0 ? "" : "badge-cancelled")"
+                                  style="@(p.Stock is > 0 and <= 10 ? "background:#fff7ed;color:#c2410c" : "")">
+                                @p.Stock
+                            </span>
+                        </td>
+                        <td>
+                            @if (p.IsFeatured)
+                            { <i class="fas fa-star" style="color:#f59e0b"></i> }
+                            else
+                            { <i class="far fa-star" style="color:var(--border)"></i> }
+                        </td>
+                        <td>
+                            <span class="badge-status @(p.IsActive ? "badge-active" : "badge-inactive")">
+                                @(p.IsActive ? "Active" : "Hidden")
+                            </span>
+                        </td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                <!-- Edit -->
+                                <a asp-action="EditProduct" asp-route-id="@p.ProductId" class="btn-edit">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+
+                                <!-- Hide (Soft Delete) -->
+                                <form asp-action="DeleteProduct" method="post" class="d-inline"
+                                      onsubmit="return confirm('Hide this product?')">
+                                    <input type="hidden" name="id" value="@p.ProductId" />
+                                    <button type="submit" class="btn-delete" title="Hide">
+                                        <i class="fas fa-eye-slash"></i>
+                                    </button>
+                                </form>
+
+                                <!-- Hard Delete -->
+                                <form asp-action="HardDeleteProduct" method="post" class="d-inline"
+                                      onsubmit="return confirm('⚠️ Permanently delete this product? This cannot be undone!')">
+                                    <input type="hidden" name="id" value="@p.ProductId" />
+                                    <button type="submit" class="btn-delete" style="background:#991b1b;color:white" title="Delete permanently">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (totalPages > 1)
+    {
+        <div class="p-4 d-flex justify-content-between align-items-center">
+            <span style="font-size:0.85rem;color:var(--muted)">Page  @(page) of @totalPages</span>
+            <div class="admin-pagination">
+                @for (int i = 1; i <= totalPages; i++)
+                {
+                    <a asp-action="Products" asp-route-page="@i" asp-route-search="@ViewBag.Search"
+                       class="@(i == page ? "current" : "")">@i</a>
+                }
+            </div>
+        </div>
+    }
+</div>

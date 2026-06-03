@@ -1,0 +1,117 @@
+@model List<OnlineShop.Models.Product>
+@{
+    ViewData["Title"] = "Products";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var categories = ViewBag.Categories as List<OnlineShop.Models.Category> ?? new();
+    int page = ViewBag.Page, totalPages = ViewBag.TotalPages, total = ViewBag.Total;
+    string sort = ViewBag.Sort ?? "popular";
+    int? catId = ViewBag.CurrentCategory;
+}
+
+<div class="container py-5">
+    <!-- PAGE HEADER -->
+    <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+        <div>
+            <h1 style="font-family:'Poppins',sans-serif;font-weight:700;font-size:1.8rem">
+                All Products
+            </h1>
+            <p class="text-muted mb-0" style="font-size:0.9rem">
+                Showing @total products
+            </p>
+        </div>
+        <!-- Sort -->
+        <form method="get" class="d-flex align-items-center gap-2">
+            @if (catId.HasValue) { <input type="hidden" name="categoryId" value="@catId" /> }
+            @if (!string.IsNullOrWhiteSpace(ViewBag.Search as string)) {
+                <input type="hidden" name="search" value="@ViewBag.Search" />
+            }
+            <select name="sort" class="form-select form-select-sm" onchange="this.form.submit()"
+                    style="border-radius:50px;border:1.5px solid var(--border);padding:8px 16px;font-weight:600;">
+                <option value="popular"   selected="@(sort=="popular")">Most Popular</option>
+                <option value="newest"    selected="@(sort=="newest")">Newest First</option>
+                <option value="rating"    selected="@(sort=="rating")">Top Rated</option>
+                <option value="price-asc" selected="@(sort=="price-asc")">Price: Low → High</option>
+                <option value="price-desc"selected="@(sort=="price-desc")">Price: High → Low</option>
+            </select>
+        </form>
+    </div>
+
+    <div class="row g-4">
+        <!-- SIDEBAR -->
+        <div class="col-lg-3 col-md-4">
+            <div class="bg-white rounded-3 p-3 border" style="position:sticky;top:80px">
+                <h6 class="fw-700 mb-3" style="color:var(--sky-600)">
+                    <i class="fas fa-filter me-2"></i>Categories
+                </h6>
+                <div class="d-flex flex-column gap-2">
+                    <a asp-action="Index" asp-route-sort="@sort"
+                       class="tag-filter @(catId == null ? "active" : "")">
+                        <i class="fas fa-th-large"></i> All Products
+                    </a>
+                    @foreach (var c in categories)
+                    {
+                        <a asp-action="Index" asp-route-categoryId="@c.CategoryId"
+                           asp-route-sort="@sort"
+                           class="tag-filter @(catId == c.CategoryId ? "active" : "")">
+                            @c.Name
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- PRODUCTS GRID -->
+        <div class="col-lg-9 col-md-8">
+            @if (!Model.Any())
+            {
+                <div class="text-center py-5">
+                    <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                    <h4>No products found</h4>
+                    <p class="text-muted">Try a different search or category.</p>
+                </div>
+            }
+            else
+            {
+                <div class="row g-3">
+                    @foreach (var p in Model)
+                    {
+                        <div class="col-6 col-lg-4">
+                            @await Html.PartialAsync("_ProductCard", p)
+                        </div>
+                    }
+                </div>
+
+                <!-- PAGINATION -->
+                @if (totalPages > 1)
+                {
+                    <nav class="mt-5 d-flex justify-content-center">
+                        <ul class="pagination">
+                            @for (int i = 1; i <= totalPages; i++)
+                            {
+                                <li class="page-item @(i == page ? "active" : "")">
+                                    <a class="page-link"
+                                       asp-action="Index"
+                                       asp-route-page="@i"
+                                       asp-route-categoryId="@catId"
+                                       asp-route-sort="@sort"
+                                       asp-route-search="@ViewBag.Search"
+                                       style="border-radius:8px;margin:0 3px;font-weight:700">
+                                        @i
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    </nav>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+.page-item.active .page-link {
+    background: linear-gradient(135deg, var(--sky-500), var(--teal-500));
+    border-color: transparent;
+}
+.page-link { color: var(--sky-600); }
+</style>

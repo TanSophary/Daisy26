@@ -1,0 +1,126 @@
+@{
+    ViewData["Title"] = "Order Confirmed";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    string orderNum = TempData["OrderNumber"]?.ToString() ?? "N/A";
+    string? userId = Context.Session.GetString("UserId");
+    string? payMethod = TempData["PaymentMethod"]?.ToString();
+}
+
+<div class="container py-5">
+    <div class="text-center py-5">
+
+        <div style="width:110px;height:110px;
+                    background:linear-gradient(135deg,var(--sky-400),var(--teal-500));
+                    border-radius:50%;
+                    display:flex;align-items:center;justify-content:center;
+                    margin:0 auto 28px;
+                    box-shadow:0 8px 30px rgba(14,165,233,0.35)">
+            <i class="fas fa-check" style="color:white;font-size:2.8rem"></i>
+        </div>
+
+        <h1 style="font-family:'Poppins',sans-serif;font-weight:800;color:var(--dark);font-size:2.4rem">
+            Order Confirmed! 🎉
+        </h1>
+        <p class="lead text-muted mt-2 mb-3">
+            Thank you for your purchase. We'll get it to you soon!
+        </p>
+
+        <div class="d-inline-block px-4 py-3 rounded-3 mb-4"
+             style="background:var(--sky-50);border:2px solid var(--sky-200)">
+            <div style="font-size:0.8rem;color:var(--muted);margin-bottom:4px">Your Order Number</div>
+            <div style="font-family:'Poppins',sans-serif;font-weight:800;color:var(--sky-600);font-size:1.3rem;letter-spacing:1px">
+                @orderNum
+            </div>
+        </div>
+
+        <!-- ABA Pay QR Reminder -->
+        @if (payMethod == "ABA Pay")
+        {
+            <div class="mb-4 mx-auto p-4 rounded-4" style="max-width:460px;background:#fff8f0;border:2px solid #f0a500">
+                <div style="font-size:1.3rem;margin-bottom:8px">🏦</div>
+                <h5 style="font-family:'Poppins',sans-serif;font-weight:700;color:#c07000;margin-bottom:8px">
+                    ការទូទាត់ ABA Pay
+                </h5>
+                <p style="font-size:0.83rem;color:#555;line-height:1.7;margin-bottom:12px">
+                    យើងខ្ញុំពុំទាន់មានការ connect to Bank ទេ<br/>
+                    សូមទូទាត់ជាមួយ QR ខាងក្រោម ហើយផ្ញើរវិកិយបត្រនៅខាងក្រោម<br/>
+                    ពួកយើងនឹងធ្វើការពិនិតមើល នឹងចេញអ៉ីវ៉ាន់ជូន<br/>
+                    <strong>សូមអរគុណ 🙏</strong>
+                </p>
+                <img src="/images/aba_qr.png" alt="ABA QR"
+                     style="max-width:240px;width:100%;border-radius:12px;border:2px solid #ddd;margin-bottom:10px" />
+                <div style="font-size:0.78rem;color:#888">
+                    SOPHARY TAN · KHR: 006 373 197 · USD: 006 373 195
+                </div>
+                <div class="mt-3 p-2 rounded-2" style="background:#fff3cd;border:1px solid #ffc107;font-size:0.8rem;color:#856404">
+                    ✅ វិកិយបត្របានទទួលរួចហើយ ក្រុមការងារកំពុងពិនិត្យ!
+                </div>
+            </div>
+        }
+
+        <!-- Telegram Bot Link -->
+        @if (!string.IsNullOrEmpty(userId))
+        {
+            <div class="mb-4 mx-auto" style="max-width:460px;background:linear-gradient(135deg,#0088cc11,#0088cc22);border:2px solid #0088cc44;border-radius:16px;padding:20px">
+                <div style="font-size:1.4rem;margin-bottom:8px">✈️</div>
+                <h5 style="font-family:'Poppins',sans-serif;font-weight:700;color:#0088cc;margin-bottom:6px">Get Order Updates on Telegram!</h5>
+                <p style="font-size:0.85rem;color:var(--dark);margin-bottom:14px">
+                    Click the button below to start our bot and receive real-time updates on your order status.
+                </p>
+                <a href="@($"https://t.me/Daisy26Shopping_bot?start={userId}")"
+                   target="_blank"
+                   class="btn"
+                   style="background:#0088cc;color:white;border-radius:50px;font-weight:700;padding:10px 28px;font-size:0.92rem;text-decoration:none;display:inline-block">
+                    <i class="fab fa-telegram-plane me-2"></i>Start Bot & Get Updates
+                </a>
+                <div style="font-size:0.75rem;color:var(--muted);margin-top:8px">You only need to do this once</div>
+            </div>
+        }
+
+        <p class="text-muted mb-5" style="max-width:420px;margin:0 auto;line-height:1.7">
+            Your order will be delivered within <strong>2–5 business days</strong>.
+        </p>
+
+        <!-- Progress Steps -->
+        <div class="row g-3 justify-content-center mb-5" style="max-width:600px;margin:0 auto 40px">
+            <div class="col-4">
+                <div class="p-3 rounded-3" style="background:var(--sky-50);border:1px solid var(--sky-100)">
+                    <div style="font-size:1.8rem;margin-bottom:6px">📦</div>
+                    <div style="font-size:0.78rem;font-weight:700;color:var(--dark)">Order Placed</div>
+                    <div style="font-size:0.72rem;color:var(--teal-600)">✓ Done</div>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="p-3 rounded-3" style="background:var(--sky-50);border:1px solid var(--sky-100)">
+                    <div style="font-size:1.8rem;margin-bottom:6px">🚚</div>
+                    <div style="font-size:0.78rem;font-weight:700;color:var(--dark)">Processing</div>
+                    <div style="font-size:0.72rem;color:var(--muted)">Soon</div>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="p-3 rounded-3" style="background:var(--sky-50);border:1px solid var(--sky-100)">
+                    <div style="font-size:1.8rem;margin-bottom:6px">🏠</div>
+                    <div style="font-size:0.78rem;font-weight:700;color:var(--dark)">Delivered</div>
+                    <div style="font-size:0.72rem;color:var(--muted)">1-2 days</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact + Buttons -->
+        <div class="mb-4">
+            <div style="font-size:0.88rem;color:var(--muted)">
+                Need help? Contact us: 📱 <strong>0979534329</strong> |
+                ✈️ <a href="https://t.me/Pha_Rie" target="_blank" style="color:var(--sky-600);font-weight:600">@@Pha_Rie</a>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-center gap-3 flex-wrap">
+            <a asp-controller="Cart" asp-action="MyOrders" class="btn-primary-shop">
+                <i class="fas fa-box me-2"></i>View My Orders
+            </a>
+            <a asp-controller="Products" asp-action="Index" class="btn-outline-shop">
+                <i class="fas fa-shopping-bag me-2"></i>Continue Shopping
+            </a>
+        </div>
+    </div>
+</div>

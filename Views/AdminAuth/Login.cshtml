@@ -1,0 +1,41 @@
+﻿@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Admin Login";
+}
+<div class="auth-page">
+    <div class="container">
+        <div class="auth-card">
+            <div class="auth-logo">Daisy<span>26</span></div>
+            <h2 class="text-center mb-1">Admin Panel</h2>
+            <p class="text-center text-muted mb-4" style="font-size:.9rem">Sign in with your admin credentials</p>
+
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger rounded-3 border-0 border-start border-danger border-4 py-2 px-3 mb-3" style="font-size:.9rem">
+                    <i class="fas fa-exclamation-circle me-2"></i>@TempData["Error"]
+                </div>
+            }
+
+            <form method="post" asp-action="Login">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Username</label>
+                    <input type="text" name="username" class="form-control" placeholder="Enter admin username" required />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Password</label>
+                    <input type="password" name="password" class="form-control" placeholder="••••••••" required />
+                </div>
+                <button type="submit" class="btn-primary-shop w-100 mt-2">
+                    <i class="fas fa-shield-alt me-2"></i>Login to Admin
+                </button>
+            </form>
+
+            <hr class="my-4" />
+            <p class="text-center text-muted" style="font-size:.9rem">
+                <a href="/" class="fw-bold text-decoration-none" style="color:var(--pink-600)">
+                    <i class="fas fa-arrow-left me-1"></i>Back to Store
+                </a>
+            </p>
+        </div>
+    </div>
+</div>

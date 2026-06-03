@@ -1,0 +1,299 @@
+@model OnlineShop.Models.Product
+@{
+    ViewData["Title"] = "Edit Product";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    var categories = ViewBag.Categories as List<OnlineShop.Models.Category> ?? new();
+    var existingImages = ViewBag.ProductImages as List<OnlineShop.Models.ProductImage> ?? new();
+}
+
+<div class="d-flex align-items-center gap-3 mb-4">
+    <a asp-action="Products" class="btn-admin-outline"><i class="fas fa-arrow-left"></i> Back</a>
+    <h1 style="font-family:'Poppins',sans-serif;font-weight:700;font-size:1.4rem;margin:0">
+        Edit: @Model.Name
+    </h1>
+</div>
+
+<form asp-action="EditProduct" asp-route-id="@Model.ProductId" method="post" enctype="multipart/form-data">
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="admin-form-card" style="max-width:100%">
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label-admin">Product Name *</label>
+                        <input asp-for="Name" class="form-control-admin" />
+                        <span asp-validation-for="Name" style="color:#ef4444;font-size:0.8rem"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label-admin">Category *</label>
+                        <select asp-for="CategoryId" class="form-control-admin">
+                            @foreach (var c in categories)
+                            {
+                                <option value="@c.CategoryId" selected="@(c.CategoryId == Model.CategoryId)">@c.Name</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label-admin">Product Code</label>
+                        <input value="@Model.ProductCode" class="form-control-admin" readonly
+                               style="background:#f9fafb;color:var(--sky-600);font-family:monospace;font-weight:700" />
+                        <input type="hidden" asp-for="ProductCode" />
+                        <div style="font-size:0.75rem;color:var(--muted);margin-top:3px">Auto-generated — cannot be changed</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label-admin">Price (USD) *</label>
+                        <input asp-for="Price" type="number" step="0.01" class="form-control-admin" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label-admin">Old Price (optional)</label>
+                        <input asp-for="OldPrice" type="number" step="0.01" class="form-control-admin" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label-admin">Stock Quantity *</label>
+                        <input asp-for="Stock" type="number" class="form-control-admin" id="stockField" readonly style="background:#f9fafb;color:var(--muted)" />
+                        <div style="font-size:0.75rem;color:var(--muted);margin-top:3px">Auto-calculated from color stocks</div>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label-admin">Description</label>
+                        <textarea asp-for="Description" class="form-control-admin" rows="4"></textarea>
+                    </div>
+
+                    <!-- COLORS WITH STOCK -->
+                    <div class="col-12">
+                        <label class="form-label-admin">Colors & Stock Per Color</label>
+                        <div id="colorStockList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px">
+                            @{
+                                var existingColorStocks = ViewBag.ColorStocks as List<OnlineShop.Models.ProductColorStock> ?? new List<OnlineShop.Models.ProductColorStock>();
+                            }
+                            @foreach (var cs in existingColorStocks)
+                            {
+                                <div class="color-stock-row" style="display:flex;gap:8px;align-items:center">
+                                    <input type="text" placeholder="Color name" value="@cs.Color"
+                                           class="form-control-admin" style="flex:1;min-width:120px"
+                                           oninput="syncColorFields()" />
+                                    <input type="number" placeholder="Stock" value="@cs.Stock" min="0"
+                                           class="form-control-admin" style="width:90px"
+                                           oninput="syncColorFields()" />
+                                    <button type="button" onclick="removeColorRow(this)"
+                                            class="btn btn-sm" style="background:#fee2e2;color:#991b1b;border-radius:8px;flex-shrink:0">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                        <button type="button" onclick="addColorRow()" class="btn btn-sm"
+                                style="background:var(--sky-50);color:var(--sky-600);border:1.5px dashed var(--sky-300);border-radius:8px;font-weight:600;font-size:0.82rem">
+                            <i class="fas fa-plus me-1"></i>Add Color
+                        </button>
+                        <div style="font-size:0.78rem;color:var(--muted);margin-top:6px">
+                            Add each color and its stock qty. Total stock is calculated automatically.
+                        </div>
+                        <div id="colorHiddenFields"></div>
+                        <div style="margin-top:10px;font-weight:700;font-size:0.85rem">
+                            Total Stock: <span id="totalStockDisplay" style="color:var(--sky-600)">@Model.Stock</span>
+                        </div>
+                    </div>
+
+                    <!-- MAIN IMAGE -->
+                    <div class="col-12">
+                        <label class="form-label-admin">Main Image</label>
+                        @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                        {
+                            <div class="d-flex align-items-center gap-3 mb-2">
+                                <img src="@Model.ImageUrl" style="width:60px;height:60px;object-fit:cover;border-radius:8px;border:2px solid var(--border)" />
+                                <span style="font-size:0.82rem;color:var(--muted)">Current main image — upload a new file to replace it</span>
+                            </div>
+                        }
+                        <div class="file-upload-area" onclick="document.getElementById('mainImageFile').click()"
+                             style="border:2px dashed var(--border);border-radius:12px;padding:20px;text-align:center;cursor:pointer;background:var(--sky-50)">
+                            <i class="fas fa-cloud-upload-alt" style="font-size:1.5rem;color:var(--sky-400);margin-bottom:6px"></i>
+                            <div id="mainFileLabel" style="font-weight:600;color:var(--dark);font-size:0.88rem">Click to upload new main image</div>
+                            <div style="font-size:0.76rem;color:var(--muted)">JPG, PNG, WEBP — leave empty to keep current</div>
+                        </div>
+                        <input type="file" name="mainImageFile" id="mainImageFile" accept="image/*" style="display:none"
+                               onchange="previewNewMain(this)" />
+                        <img id="newMainPreview" src="" style="display:none;width:80px;height:80px;object-fit:cover;border-radius:8px;margin-top:8px;border:2px solid var(--sky-400)" />
+                    </div>
+
+                    <!-- EXISTING GALLERY IMAGES -->
+                    @if (existingImages.Any())
+                    {
+                        <div class="col-12">
+                            <label class="form-label-admin">Current Gallery Images</label>
+                            <div class="d-flex flex-wrap gap-2">
+                                @foreach (var img in existingImages)
+                                {
+                                    <div style="position:relative" id="imgBlock_@img.ImageId">
+                                        <img src="@img.ImageUrl" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:2px solid var(--border)" onerror="this.style.opacity=.3" />
+                                        <button type="button" onclick="markDelete(@img.ImageId)"
+                                                id="delBtn_@img.ImageId"
+                                                style="position:absolute;top:-6px;right:-6px;background:#ef4444;color:#fff;border:none;border-radius:50%;width:22px;height:22px;font-size:0.65rem;cursor:pointer;display:flex;align-items:center;justify-content:center">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                        <input type="hidden" name="deleteImageIds" id="deleteHidden_@img.ImageId" value="" />
+                                    </div>
+                                }
+                            </div>
+                            <div style="font-size:0.78rem;color:var(--muted);margin-top:4px">Click ✕ on an image to delete it when you save.</div>
+                        </div>
+                    }
+
+                    <!-- ADD NEW EXTRA IMAGES -->
+                    <div class="col-12">
+                        <label class="form-label-admin">Add New Gallery Images</label>
+                        <div id="extraFilesContainer"></div>
+                        <button type="button" onclick="addExtraFileInput()" class="btn btn-sm mt-1"
+                                style="background:var(--sky-50);color:var(--sky-600);border:1.5px dashed var(--sky-300);border-radius:8px;font-weight:600;font-size:0.82rem">
+                            <i class="fas fa-plus me-1"></i>Add Image
+                        </button>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label-admin">Rating (0–5)</label>
+                        <input asp-for="Rating" type="number" step="0.1" min="0" max="5" class="form-control-admin" />
+                    </div>
+                    <div class="col-md-4 d-flex align-items-center gap-3 mt-4">
+                        <label class="d-flex align-items-center gap-2" style="cursor:pointer;font-weight:700">
+                            <input asp-for="IsFeatured" type="checkbox" style="width:18px;height:18px;accent-color:var(--sky-500)" />
+                            Featured Product
+                        </label>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-center gap-3 mt-4">
+                        <label class="d-flex align-items-center gap-2" style="cursor:pointer;font-weight:700">
+                            <input asp-for="IsActive" type="checkbox" style="width:18px;height:18px;accent-color:var(--sky-500)" />
+                            Active (Visible)
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="admin-form-card p-4 text-center mb-4" style="max-width:100%">
+                <div class="form-label-admin mb-3">Current Main Image</div>
+                <img src="@(Model.ImageUrl ?? "https://via.placeholder.com/250x250?text=No+Image")"
+                     id="currentMainPreview"
+                     style="width:100%;max-width:250px;height:200px;object-fit:cover;border-radius:12px;border:2px dashed var(--border)"
+                     onerror="this.src='https://via.placeholder.com/250x250?text=No+Image'" />
+            </div>
+
+            <div class="admin-form-card p-4" style="max-width:100%">
+                <button type="submit" class="btn-admin-primary w-100 justify-content-center mb-2"
+                        style="padding:14px;font-size:1rem">
+                    <i class="fas fa-save me-2"></i>Save Changes
+                </button>
+                <a asp-action="Products" class="btn-admin-outline w-100 justify-content-center"
+                   style="padding:12px">
+                    <i class="fas fa-times me-2"></i>Cancel
+                </a>
+            </div>
+        </div>
+    </div>
+</form>
+
+<script>
+    let extraCount = 0;
+
+    function previewNewMain(input) {
+        if (!input.files || !input.files[0]) return;
+        const file = input.files[0];
+        const url = URL.createObjectURL(file);
+        document.getElementById('mainFileLabel').textContent = file.name;
+        const prev = document.getElementById('newMainPreview');
+        prev.src = url; prev.style.display = 'block';
+        document.getElementById('currentMainPreview').src = url;
+    }
+
+    function markDelete(imageId) {
+        const hidden = document.getElementById('deleteHidden_' + imageId);
+        const block = document.getElementById('imgBlock_' + imageId);
+        const btn = document.getElementById('delBtn_' + imageId);
+        if (hidden.value === '') {
+            // Mark for deletion
+            hidden.value = imageId;
+            block.style.opacity = '0.35';
+            btn.style.background = '#6b7280';
+            btn.title = 'Click to undo';
+        } else {
+            // Unmark
+            hidden.value = '';
+            block.style.opacity = '1';
+            btn.style.background = '#ef4444';
+        }
+    }
+
+    function addExtraFileInput() {
+        const container = document.getElementById('extraFilesContainer');
+        const rows = container.querySelectorAll('.extra-file-row');
+        if (rows.length >= 8) { alert('Maximum 8 additional images.'); return; }
+        const idx = ++extraCount;
+        const div = document.createElement('div');
+        div.className = 'extra-file-row d-flex gap-2 mb-2 align-items-center';
+        div.innerHTML = `
+            <label class="d-flex align-items-center gap-2 flex-grow-1" style="border:1.5px dashed var(--border);border-radius:8px;padding:8px 12px;cursor:pointer;background:#fff;min-width:0">
+                <i class="fas fa-image" style="color:var(--sky-400)"></i>
+                <span id="extraLabel_${idx}" style="font-size:0.85rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Choose image</span>
+                <input type="file" name="extraImageFiles" accept="image/*" style="display:none"
+                       onchange="updateExtraLabel(this, ${idx})" />
+            </label>
+            <button type="button" onclick="this.closest('.extra-file-row').remove()" class="btn btn-sm" style="background:#fee2e2;color:#991b1b;border-radius:8px;flex-shrink:0">
+                <i class="fas fa-times"></i>
+            </button>`;
+        container.appendChild(div);
+    }
+
+    function updateExtraLabel(input, idx) {
+        if (input.files && input.files[0]) {
+            document.getElementById('extraLabel_' + idx).textContent = input.files[0].name;
+        }
+    }
+
+    // ── Color Stock rows ──────────────────────────────────
+    function addColorRow(name = '', stock = 0) {
+        const list = document.getElementById('colorStockList');
+        const div = document.createElement('div');
+        div.className = 'color-stock-row';
+        div.style.cssText = 'display:flex;gap:8px;align-items:center';
+        div.innerHTML = `
+            <input type="text" placeholder="Color name (e.g. Red)" value="${name}"
+                   class="form-control-admin" style="flex:1;min-width:120px"
+                   oninput="syncColorFields()" />
+            <input type="number" placeholder="Stock" value="${stock}" min="0"
+                   class="form-control-admin" style="width:90px"
+                   oninput="syncColorFields()" />
+            <button type="button" onclick="removeColorRow(this)"
+                    class="btn btn-sm" style="background:#fee2e2;color:#991b1b;border-radius:8px;flex-shrink:0">
+                <i class="fas fa-times"></i>
+            </button>`;
+        list.appendChild(div);
+        syncColorFields();
+    }
+
+    function removeColorRow(btn) {
+        btn.closest('.color-stock-row').remove();
+        syncColorFields();
+    }
+
+    function syncColorFields() {
+        const rows = document.querySelectorAll('.color-stock-row');
+        const hidden = document.getElementById('colorHiddenFields');
+        hidden.innerHTML = '';
+        let total = 0;
+        rows.forEach(row => {
+            const inputs = row.querySelectorAll('input');
+            const name = inputs[0].value.trim();
+            const qty = parseInt(inputs[1].value) || 0;
+            if (name) {
+                hidden.innerHTML += `<input type="hidden" name="colorNames" value="${name}" />`;
+                hidden.innerHTML += `<input type="hidden" name="colorStocks" value="${qty}" />`;
+                total += qty;
+            }
+        });
+        document.getElementById('totalStockDisplay').textContent = total;
+        const sf = document.getElementById('stockField');
+        if (sf) sf.value = total;
+    }
+
+    // Run on page load to sync existing rows
+    document.addEventListener('DOMContentLoaded', syncColorFields);
+    // ─────────────────────────────────────────────────────
+</script>

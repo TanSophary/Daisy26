@@ -1,0 +1,591 @@
+@model List<OnlineShop.Models.CartItem>
+@{
+    ViewData["Title"] = "Checkout";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    decimal sub = Model.Sum(i => (i.Product?.Price ?? 0) * i.Quantity);
+    decimal ship = sub >= 100 ? 0 : 2;
+    var loggedInName = Context.Session.GetString("UserName") ?? "";
+    var loggedInPhone = Context.Session.GetString("UserPhone") ?? "";
+}
+
+<div class="container py-5">
+    <h1 style="font-family:'Poppins',sans-serif;font-weight:700;margin-bottom:32px">
+        <i class="fas fa-lock me-2" style="color:var(--sky-500)"></i>Checkout
+    </h1>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger rounded-3 mb-4">
+            <i class="fas fa-exclamation-circle me-2"></i>@TempData["Error"]
+        </div>
+    }
+
+    <form asp-action="PlaceOrder" method="post" id="checkoutForm" enctype="multipart/form-data">
+        <input type="hidden" name="locationLat" id="locationLat" />
+        <input type="hidden" name="locationLng" id="locationLng" />
+        <input type="hidden" name="city" id="cityField" />
+
+        <div class="row g-4">
+            <!-- LEFT: Shipping + Map + Payment + Coupon -->
+            <div class="col-lg-7">
+
+                <!-- Shipping Info -->
+                <div class="bg-white rounded-3 p-4 border mb-4">
+                    <h5 style="font-family:'Poppins',sans-serif;font-weight:700;color:var(--sky-600);margin-bottom:20px">
+                        <i class="fas fa-truck me-2"></i>Shipping Information
+                    </h5>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold" style="font-size:0.88rem">Full Name *</label>
+                            <input type="text" name="name" class="form-control" required
+                                   placeholder="Your full name"
+                                   value="@loggedInName"
+                                   style="border-radius:10px;border:1.5px solid var(--border)" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold" style="font-size:0.88rem">Phone Number *</label>
+                            <input type="tel" name="phone" class="form-control" required
+                                   placeholder="+855 12 345 678"
+                                   value="@loggedInPhone"
+                                   style="border-radius:10px;border:1.5px solid var(--border)" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold" style="font-size:0.88rem">Delivery Address *</label>
+                            <textarea name="address" id="addressField" class="form-control" rows="2" required
+                                      placeholder="Street, City, Province"
+                                      style="border-radius:10px;border:1.5px solid var(--border)"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold" style="font-size:0.88rem">Order Note (optional)</label>
+                            <input type="text" name="note" class="form-control"
+                                   placeholder="Special delivery instructions..."
+                                   style="border-radius:10px;border:1.5px solid var(--border)" />
+                        </div>
+                        <!-- Delivery Method -->
+                        <div class="bg-white rounded-3 p-4 border mb-4" id="deliveryMethodBox" style="display:none">
+                            <h5 style="font-family:'Poppins',sans-serif;font-weight:700;color:var(--sky-600);margin-bottom:20px">
+                                <i class="fas fa-shipping-fast me-2"></i>Delivery Method
+                            </h5>
+
+                            <div class="d-flex flex-column gap-2">
+                                <label class="d-flex align-items-center gap-3 p-3 rounded-3 border" style="cursor:pointer">
+                                    <input type="radio" name="deliveryMethod" value="Vireak Buntham"
+                                           style="accent-color:var(--sky-500)" required />
+                                    <span style="font-size:1.2rem">🚛</span>
+                                    <div>
+                                        <span style="font-weight:600;font-size:0.92rem">វីរះប៊ុនថាំ</span>
+                                        <div style="font-size:0.75rem;color:var(--muted)">Vireak Buntham Transport</div>
+                                    </div>
+                                </label>
+
+                                <label class="d-flex align-items-center gap-3 p-3 rounded-3 border" style="cursor:pointer">
+                                    <input type="radio" name="deliveryMethod" value="J&T Express"
+                                           style="accent-color:var(--sky-500)" required />
+                                    <span style="font-size:1.2rem">📦</span>
+                                    <div>
+                                        <span style="font-weight:600;font-size:0.92rem">J&T Express</span>
+                                        <div style="font-size:0.75rem;color:var(--muted)">Fast delivery service</div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Google Map Location -->
+                <div class="bg-white rounded-3 p-4 border mb-4">
+                    <h5 style="font-family:'Poppins',sans-serif;font-weight:700;color:var(--sky-600);margin-bottom:16px">
+                        <i class="fas fa-map-marker-alt me-2"></i>Delivery Location
+                        <span style="font-size:0.75rem;color:var(--muted);font-weight:400;margin-left:8px">(Click map to change)</span>
+                    </h5>
+                    <div id="map" style="width:100%;height:300px;border-radius:12px;border:1.5px solid var(--border);overflow:hidden;background:#e8f0fe;display:flex;align-items:center;justify-content:center;">
+                        <div id="mapPlaceholder" style="text-align:center;color:#888;font-size:0.9rem">
+                            <i class="fas fa-map-marker-alt" style="font-size:2rem;color:var(--sky-400);display:block;margin-bottom:8px"></i>
+                            Loading map...
+                        </div>
+                    </div>
+                    <div class="mt-2 d-flex align-items-center gap-2 flex-wrap">
+                        <button type="button" onclick="getCurrentLocation()" class="btn btn-sm"
+                                style="background:var(--sky-100);color:var(--sky-600);border:1.5px solid var(--sky-200);border-radius:8px;font-weight:600;font-size:0.82rem">
+                            <i class="fas fa-crosshairs me-1"></i>Use My Location
+                        </button>
+                        <span id="locationStatus" style="font-size:0.8rem;color:var(--muted)">📍 Tap map or drag pin to set location</span>
+                    </div>
+                </div>
+
+                <!-- Payment Method -->
+                <div class="bg-white rounded-3 p-4 border mb-4">
+                    <h5 style="font-family:'Poppins',sans-serif;font-weight:700;color:var(--sky-600);margin-bottom:20px">
+                        <i class="fas fa-credit-card me-2"></i>Payment Method
+                    </h5>
+                    <div id="codWarning" class="alert alert-warning d-none py-2 px-3" style="font-size:0.85rem;border-radius:10px">
+                        <i class="fas fa-info-circle me-1"></i>
+                        <strong>Cash on Delivery</strong> is only available in <strong>Phnom Penh</strong>.
+                        Please add "Phnom Penh" to your address, or choose another payment method.
+                    </div>
+                    <div class="d-flex flex-column gap-2">
+                        <label class="d-flex align-items-center gap-3 p-3 rounded-3 border" style="cursor:pointer" id="cashLabel">
+                            <input type="radio" name="payment" value="Cash" id="cashRadio"
+                                   style="accent-color:var(--sky-500)" />
+                            <span style="font-size:1.1rem">💵</span>
+                            <div>
+                                <span style="font-weight:600;font-size:0.92rem">Cash on Delivery</span>
+                                <div style="font-size:0.75rem;color:var(--muted)">Phnom Penh only</div>
+                            </div>
+                        </label>
+                        <label class="d-flex align-items-center gap-3 p-3 rounded-3 border" style="cursor:pointer" id="abaLabel">
+                            <input type="radio" name="payment" value="ABA Pay" id="abaRadio"
+                                   style="accent-color:var(--sky-500)" />
+                            <span style="font-size:1.1rem">🏦</span>
+                            <div>
+                                <span style="font-weight:600;font-size:0.92rem">ABA Pay</span>
+                                <div style="font-size:0.75rem;color:var(--muted)">Scan QR to pay</div>
+                            </div>
+                        </label>
+
+                        <!-- ABA QR Section (shown when ABA Pay selected) -->
+                        <div id="abaQrSection" class="d-none mt-3 p-4 rounded-3" style="background:#fff8f0;border:2px solid #f0a500;border-radius:16px">
+                            <div class="text-center mb-3">
+                                <div style="font-size:0.82rem;font-weight:700;color:#c07000;margin-bottom:4px">
+                                    ⚠️ យើងខ្ញុំពុំទាន់មានការ connect to Bank ទេ
+                                </div>
+                                <p style="font-size:0.82rem;color:#555;line-height:1.6;margin-bottom:0">
+                                    សូមទូទាត់ជាមួយ QR ខាងក្រោម ហើយផ្ញើរវិកិយបត្រនៅខាងក្រោម<br />
+                                    ពួកយើងនឹងធ្វើការពិនិតមើល នឹងចេញអ៉ីវ៉ាន់ជូន<br />
+                                    <strong>សូមអរគុណ</strong> 🙏
+                                </p>
+                            </div>
+                            <div class="text-center mb-3">
+                                <img src="/images/QR.jpg" alt="ABA QR Code"
+                                     style="max-width:280px;width:100%;border-radius:12px;border:2px solid #ddd;box-shadow:0 4px 16px rgba(0,0,0,0.12)" />
+                                <div class="mt-2" style="font-size:0.78rem;color:#888">
+                                    SOPHARY TAN · KHR: 006 373 197 · USD: 006 373 195
+                                </div>
+                            </div>
+                            <div>
+                                <label class="form-label fw-bold" style="font-size:0.85rem;color:#c07000">
+                                    📎 Upload Payment Invoice / Screenshot *
+                                </label>
+                                <input type="file" name="invoiceFile" id="invoiceFile"
+                                       accept="image/*,.pdf"
+                                       class="form-control"
+                                       style="border-radius:10px;border:1.5px solid #f0a500" />
+                                <div style="font-size:0.75rem;color:#888;margin-top:4px">
+                                    Accepted: JPG, PNG, PDF · Max 5MB
+                                </div>
+                            </div>
+                        </div>
+                        <label class="d-flex align-items-center gap-3 p-3 rounded-3 border" style="cursor:pointer" id="wingLabel">
+                            <input type="radio" name="payment" value="Wing" id="wingRadio"
+                                   style="accent-color:var(--sky-500)" />
+                            <span style="font-size:1.1rem">🔷</span>
+                            <div>
+                                <span style="font-weight:600;font-size:0.92rem">Wing Money</span>
+                                <div style="font-size:0.75rem;color:var(--muted)">Transfer to Wing account</div>
+                            </div>
+                        </label>
+
+                        <!-- Wing Pay Section -->
+                        <div id="wingSection" class="d-none mt-3 p-4 rounded-3" style="background:#e8f4fd;border:2px solid #0072bc;border-radius:16px">
+                            <div class="text-center mb-3">
+                                <div style="font-size:1.1rem;font-weight:700;color:#0072bc;margin-bottom:8px">
+                                    🔷 Wing Money Transfer
+                                </div>
+                                <p style="font-size:0.85rem;color:#333;line-height:1.7;margin-bottom:12px">
+                                    សូមផ្ញើប្រាក់មកលេខ Wing ខាងក្រោម ហើយ Upload វិកិយបត្រ<br />
+                                    ពួកយើងនឹងពិនិត្យ នឹងចេញអ៉ីវ៉ាន់ជូន 🙏
+                                </p>
+                                <div class="d-inline-block p-3 rounded-3" style="background:#0072bc;color:white;font-size:1.15rem;font-weight:700;letter-spacing:1px">
+                                    📱 0979534329 / 060 297 876
+                                </div>
+                                <div style="font-size:0.78rem;color:#555;margin-top:6px">SOPHARY TAN</div>
+                            </div>
+                            <div>
+                                <label class="form-label fw-bold" style="font-size:0.85rem;color:#0072bc">
+                                    📎 Upload Payment Invoice / Screenshot *
+                                </label>
+                                <input type="file" name="invoiceFile" id="wingInvoiceFile"
+                                       accept="image/*,.pdf"
+                                       class="form-control"
+                                       style="border-radius:10px;border:1.5px solid #0072bc" />
+                                <div style="font-size:0.75rem;color:#888;margin-top:4px">
+                                    Accepted: JPG, PNG, PDF · Max 5MB
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Coupon Code -->
+                <div class="bg-white rounded-3 p-4 border">
+                    <h5 style="font-family:'Poppins',sans-serif;font-weight:700;color:var(--sky-600);margin-bottom:16px">
+                        <i class="fas fa-tag me-2"></i>Coupon Code
+                    </h5>
+                    <div class="d-flex gap-2">
+                        <input type="text" id="couponInput" name="couponCode" class="form-control"
+                               placeholder="Enter coupon code (e.g. SAVE20)"
+                               style="border-radius:10px;border:1.5px solid var(--border)"
+                               oninput="resetCoupon()" />
+                        <button type="button" onclick="applyCoupon()"
+                                style="background:var(--sky-100);color:var(--sky-600);font-weight:700;border-radius:10px;white-space:nowrap;border:1.5px solid var(--sky-200);padding:8px 18px">
+                            Apply
+                        </button>
+                    </div>
+                    <div id="couponMsg" class="mt-2" style="font-size:0.85rem"></div>
+                    <div class="mt-2" style="font-size:0.8rem;color:var(--muted)">
+                        Try: WELCOME10 · SAVE20 · FLAT50 · VIP30 · FREESHIP
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT: Order Summary -->
+            <div class="col-lg-5">
+                <div class="cart-summary" style="position:sticky;top:80px">
+                    <h4>Order Summary</h4>
+
+                    @foreach (var item in Model)
+                    {
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <img src="@item.Product?.ImageUrl"
+                                 style="width:50px;height:50px;object-fit:cover;border-radius:8px;border:1px solid var(--border)"
+                                 alt="@item.Product?.Name" />
+                            <div class="flex-fill">
+                                <div style="font-size:0.85rem;font-weight:600;line-height:1.3">@item.Product?.Name</div>
+                                <div style="font-size:0.78rem;color:var(--muted)">Qty: @item.Quantity</div>
+                            </div>
+                            <span style="font-weight:700;color:var(--sky-600);white-space:nowrap">
+                                $@(((item.Product?.Price ?? 0) * item.Quantity).ToString("0.00"))
+                            </span>
+                        </div>
+                    }
+
+                    <hr style="border-color:var(--border)" />
+
+                    <div class="summary-row">
+                        <span>Subtotal</span>
+                        <span>$@sub.ToString("0.00")</span>
+                    </div>
+                    <div class="summary-row" id="discountRow" style="display:none;color:#16a34a;font-weight:600">
+                        <span>Discount</span>
+                        <span id="discountDisplay">-$0.00</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Shipping</span>
+                        <span id="shippingDisplay">@(ship == 0 ? "FREE" : "$" + ship.ToString("0.00"))</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>Total</span>
+                        <span id="totalDisplay">$@((sub + ship).ToString("0.00"))</span>
+                    </div>
+
+                    <!-- Contact Seller -->
+                    <div class="mt-3 p-3 rounded-3" style="background:var(--sky-50);border:1px solid var(--sky-100)">
+                        <div style="font-size:0.82rem;font-weight:700;color:var(--sky-700);margin-bottom:6px">
+                            <i class="fas fa-headset me-1"></i>Contact Seller
+                        </div>
+                        <div style="font-size:0.82rem;color:var(--dark)">
+                            📱 <strong>0979534329</strong>
+                        </div>
+                        <div style="font-size:0.82rem;color:var(--dark)">
+                            ✈️ Telegram: <a href="https://t.me/Pha_Rie" target="_blank" style="color:var(--sky-600);font-weight:600">@@Pha_Rie</a>
+                        </div>
+                    </div>
+
+                    <!-- Telegram Bot Banner -->
+                    @{
+                        string? checkoutUserId = Context.Session.GetString("UserId");
+                    }
+                    @if (!string.IsNullOrEmpty(checkoutUserId))
+                    {
+                        <div class="mt-3 p-3 rounded-3" style="background:linear-gradient(135deg,#0088cc11,#0088cc22);border:2px solid #0088cc44">
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <span style="font-size:1.2rem">✈️</span>
+                                <span style="font-weight:700;font-size:0.88rem;color:#0088cc">Get Order Updates on Telegram!</span>
+                            </div>
+                            <p style="font-size:0.78rem;color:var(--dark);margin-bottom:10px;line-height:1.5">
+                                After ordering, click below to receive real-time status updates from our bot.
+                            </p>
+                            <a href="@($"https://t.me/Daisy26Shopping_bot?start={checkoutUserId}")"
+                               target="_blank"
+                               style="display:inline-block;background:#0088cc;color:white;border-radius:50px;font-weight:700;padding:7px 18px;font-size:0.8rem;text-decoration:none">
+                                <i class="fab fa-telegram-plane me-1"></i>Connect Telegram
+                            </a>
+                        </div>
+                    }
+
+                    <button type="submit" class="btn-primary-shop w-100 mt-4"
+                            style="padding:14px;border-radius:50px;border:none;cursor:pointer;font-size:1rem"
+                            onclick="return validateOrder()">
+                        <i class="fas fa-check-circle me-2"></i>Place Order
+                    </button>
+
+                    <p class="text-center mt-3 mb-0" style="font-size:0.8rem;color:var(--muted)">
+                        <i class="fas fa-shield-alt me-1"></i>Secure &amp; encrypted checkout
+                    </p>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Google Maps API -->
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU3LKo&callback=initMap" async defer></script>
+
+<script>
+    let map, marker;
+    const defaultLat = 11.5564;
+    const defaultLng = 104.9282;
+
+    function initMap() {
+        const placeholder = document.getElementById('mapPlaceholder');
+        if (placeholder) placeholder.remove();
+
+        map = new google.maps.Map(document.getElementById('map'), {
+            center: { lat: defaultLat, lng: defaultLng },
+            zoom: 14,
+            mapTypeControl: false,
+            streetViewControl: false,
+            gestureHandling: 'greedy'
+        });
+
+        marker = new google.maps.Marker({
+            position: { lat: defaultLat, lng: defaultLng },
+            map: map,
+            draggable: true,
+            title: 'Delivery Location'
+        });
+
+        setLocationInputs(defaultLat, defaultLng);
+
+        marker.addListener('dragend', function () {
+            const pos = marker.getPosition();
+            setLocationInputs(pos.lat(), pos.lng());
+            reverseGeocode(pos.lat(), pos.lng());
+        });
+
+        map.addListener('click', function (e) {
+            marker.setPosition(e.latLng);
+            setLocationInputs(e.latLng.lat(), e.latLng.lng());
+            reverseGeocode(e.latLng.lat(), e.latLng.lng());
+        });
+
+        getCurrentLocation();
+    }
+
+    function setLocationInputs(lat, lng) {
+        document.getElementById('locationLat').value = lat;
+        document.getElementById('locationLng').value = lng;
+        document.getElementById('locationStatus').textContent = '📍 Location: ' + lat.toFixed(5) + ', ' + lng.toFixed(5);
+    }
+
+    function getCurrentLocation() {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function (pos) {
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+                if (map && marker) {
+                    map.setCenter({ lat, lng });
+                    marker.setPosition({ lat, lng });
+                }
+                setLocationInputs(lat, lng);
+                reverseGeocode(lat, lng);
+            }, function () {
+                document.getElementById('locationStatus').textContent = '⚠️ Could not get location. Tap map to set.';
+            });
+        }
+    }
+
+    function checkShippingNote() {
+        const address = (document.getElementById('addressField').value || '').toLowerCase();
+        const city = (document.getElementById('cityField').value || '').toLowerCase();
+        const isPhnomPenh = address.includes('phnom penh') || city.includes('phnom penh');
+
+        const noteBox = document.getElementById('shippingNoteBox');
+        const deliveryBox = document.getElementById('deliveryMethodBox');
+
+        if (noteBox) {
+            noteBox.style.display = (isPhnomPenh) ? 'none' : 'block';
+        }
+
+        if (deliveryBox) {
+            deliveryBox.style.display = (isPhnomPenh) ? 'none' : 'block';
+        }
+    }
+
+    function reverseGeocode(lat, lng) {
+        const geocoder = new google.maps.Geocoder();
+        geocoder.geocode({ location: { lat, lng } }, function (results, status) {
+            if (status === 'OK' && results[0]) {
+                const addr = results[0].formatted_address;
+                document.getElementById('addressField').value = addr;
+                const components = results[0].address_components;
+                let city = '';
+                for (const comp of components) {
+                    if (comp.types.includes('locality') || comp.types.includes('administrative_area_level_1')) {
+                        city = comp.long_name;
+                        break;
+                    }
+                }
+                document.getElementById('cityField').value = city || addr;
+                checkCodAvailability();
+                checkShippingNote();
+            }
+        });
+    }
+
+    function checkCodAvailability() {
+        const address = (document.getElementById('addressField').value || '').toLowerCase();
+        const city = (document.getElementById('cityField').value || '').toLowerCase();
+        const isPhnomPenh = address.includes('phnom penh') || city.includes('phnom penh');
+        const cashRadio = document.getElementById('cashRadio');
+        const codWarning = document.getElementById('codWarning');
+        const cashLabel = document.getElementById('cashLabel');
+
+        if (!isPhnomPenh && cashRadio.checked) {
+            codWarning.classList.remove('d-none');
+        } else {
+            codWarning.classList.add('d-none');
+        }
+
+        if (!isPhnomPenh) {
+            cashRadio.disabled = true;
+            cashLabel.style.opacity = '0.5';
+            if (cashRadio.checked) cashRadio.checked = false;
+        } else {
+            cashRadio.disabled = false;
+            cashLabel.style.opacity = '1';
+        }
+    }
+
+    function validateOrder() {
+        const lat = document.getElementById('locationLat').value;
+        const lng = document.getElementById('locationLng').value;
+        if (!lat || !lng) {
+            alert('Please tap on the map to set your delivery location.');
+            return false;
+        }
+        const abaRadio = document.getElementById('abaRadio');
+        if (abaRadio && abaRadio.checked) {
+            const invoiceFile = document.getElementById('invoiceFile');
+            if (!invoiceFile || !invoiceFile.files || invoiceFile.files.length === 0) {
+                alert('សូម Upload វិកិយបត្រ ABA មុនដំណើរការ!\n(Please upload your ABA payment screenshot)');
+                invoiceFile.focus();
+                return false;
+            }
+        }
+        const wingRadio = document.getElementById('wingRadio');
+        if (wingRadio && wingRadio.checked) {
+            const wingInvoice = document.getElementById('wingInvoiceFile');
+            if (!wingInvoice || !wingInvoice.files || wingInvoice.files.length === 0) {
+                alert('សូម Upload វិកិយបត្រ Wing មុនដំណើរការ!\n(Please upload your Wing payment screenshot)');
+                wingInvoice.focus();
+                return false;
+            }
+        }
+        const deliveryBox = document.getElementById('deliveryMethodBox');
+        if (deliveryBox && deliveryBox.style.display !== 'none') {
+            const selected = document.querySelector('input[name="deliveryMethod"]:checked');
+            if (!selected) {
+                alert('សូមជ្រើសរើសមធ្យោបាយដឹកជញ្ជូន!');
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    function toggleAbaQr() {
+        const abaRadio = document.getElementById('abaRadio');
+        const abaSection = document.getElementById('abaQrSection');
+        if (abaRadio && abaSection) {
+            if (abaRadio.checked) abaSection.classList.remove('d-none');
+            else abaSection.classList.add('d-none');
+        }
+    }
+
+    function toggleWingSection() {
+        const wingRadio = document.getElementById('wingRadio');
+        const wingSection = document.getElementById('wingSection');
+        if (wingRadio && wingSection) {
+            if (wingRadio.checked) wingSection.classList.remove('d-none');
+            else wingSection.classList.add('d-none');
+        }
+    }
+
+    document.querySelectorAll('input[name="payment"]').forEach(r => {
+        r.addEventListener('change', function() {
+            checkCodAvailability();
+            toggleAbaQr();
+            toggleWingSection();
+        });
+    });
+    document.getElementById('addressField').addEventListener('input', function() {
+        checkCodAvailability();
+        checkShippingNote();
+    });
+
+    toggleAbaQr();
+    toggleWingSection();
+    checkShippingNote();
+
+    // ── Coupon Apply ──────────────────────────────────────────────────────
+    const SUB = @sub.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+    let appliedDiscount = 0;
+
+    async function applyCoupon() {
+        const code = document.getElementById('couponInput').value.trim();
+        const msgEl = document.getElementById('couponMsg');
+        if (!code) { msgEl.innerHTML = '<span style="color:#ef4444">Please enter a coupon code.</span>'; return; }
+
+        msgEl.innerHTML = '<span style="color:var(--muted)"><i class="fas fa-spinner fa-spin me-1"></i>Validating...</span>';
+
+        try {
+            const res = await fetch('/Cart/ValidateCoupon', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code: code, subtotal: SUB })
+            });
+            const data = await res.json();
+
+            if (data.valid) {
+                appliedDiscount = data.discount;
+                msgEl.innerHTML = `<span style="color:#16a34a;font-weight:600"><i class="fas fa-check-circle me-1"></i>${data.message}</span>`;
+                updateSummary();
+            } else {
+                appliedDiscount = 0;
+                msgEl.innerHTML = `<span style="color:#ef4444"><i class="fas fa-times-circle me-1"></i>${data.message}</span>`;
+                updateSummary();
+            }
+        } catch {
+            msgEl.innerHTML = '<span style="color:#ef4444">Could not validate coupon. Please try again.</span>';
+        }
+    }
+
+    function resetCoupon() {
+        appliedDiscount = 0;
+        document.getElementById('couponMsg').innerHTML = '';
+        updateSummary();
+    }
+
+    function updateSummary() {
+        const disc = appliedDiscount;
+        const afterDisc = Math.max(0, SUB - disc);
+        const ship = afterDisc >= 100 ? 0 : 2;
+        const total = afterDisc + ship;
+
+        const discRow = document.getElementById('discountRow');
+        const discDisplay = document.getElementById('discountDisplay');
+        const shipDisplay = document.getElementById('shippingDisplay');
+        const totalDisplay = document.getElementById('totalDisplay');
+
+        if (disc > 0) {
+            discRow.style.display = '';
+            discDisplay.textContent = '-$' + disc.toFixed(2);
+        } else {
+            discRow.style.display = 'none';
+        }
+        shipDisplay.textContent = ship === 0 ? 'FREE' : '$' + ship.toFixed(2);
+        totalDisplay.textContent = '$' + total.toFixed(2);
+    }
+    // ─────────────────────────────────────────────────────────────────────
+</script>

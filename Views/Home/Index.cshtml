@@ -1,0 +1,197 @@
+@{
+    ViewData["Title"] = "Home";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var featured  = ViewBag.FeaturedProducts  as List<OnlineShop.Models.Product> ?? new();
+    var categories = ViewBag.Categories       as List<OnlineShop.Models.Category> ?? new();
+    var bestSellers = ViewBag.BestSellers     as List<OnlineShop.Models.Product> ?? new();
+    var newArrivals = ViewBag.NewArrivals     as List<OnlineShop.Models.Product> ?? new();
+}
+
+<!-- ===== HERO ===== -->
+<section class="hero">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6 hero-content">
+                <div class="badge bg-white text-primary fw-bold px-3 py-2 rounded-pill mb-3" style="font-size:0.8rem">
+                    🌼 Shop Your Favorite Styles Today
+                </div>
+                <h1>Discover Amazing<br>Products at <span>Best Prices</span></h1>
+                <p>Shop thousands of quality products with fast delivery, easy returns, and 24/7 customer support.</p>
+                <div class="d-flex flex-wrap gap-2">
+                    <a asp-controller="Products" asp-action="Index" class="btn-hero-primary">
+                        <i class="fas fa-shopping-bag me-2"></i>Shop Now
+                    </a>
+                    <a asp-controller="Products" asp-action="Index" asp-route-sort="newest" class="btn-hero-secondary">
+                        New Arrivals <i class="fas fa-arrow-right ms-2"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-6 d-none d-lg-flex justify-content-center mt-4 mt-lg-0">
+                <div class="row g-3" style="max-width:420px">
+                    <div class="col-6">
+                        <div class="rounded-3 overflow-hidden shadow-lg" style="height:180px">
+                            <img src="~/images/image1.png" class="w-100 h-100" style="object-fit:cover" alt="" />
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="rounded-3 overflow-hidden shadow-lg" style="height:180px">
+                            <img src="~/images/image2.png" class="w-100 h-100" style="object-fit:cover" alt="" />
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div class="rounded-3 overflow-hidden shadow-lg" style="height:150px">
+                            <img src="~/images/image3.png" class="w-100 h-100" style="object-fit:cover" alt="" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ===== STATS BAR ===== -->
+<div class="container my-5">
+    <div class="stats-bar">
+        <div class="row g-4 text-center">
+            <div class="col-6 col-md-3 stat-item">
+                <div class="value">10K+</div>
+                <div class="label">Products</div>
+            </div>
+            <div class="col-6 col-md-3 stat-item">
+                <div class="value">50K+</div>
+                <div class="label">Happy Customers</div>
+            </div>
+            <div class="col-6 col-md-3 stat-item">
+                <div class="value">99%</div>
+                <div class="label">Satisfaction Rate</div>
+            </div>
+            <div class="col-6 col-md-3 stat-item">
+                <div class="value">24/7</div>
+                <div class="label">Customer Support</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== CATEGORIES ===== -->
+<section class="section section-light">
+    <div class="container">
+        <div class="section-header">
+            <div class="section-divider">
+                <div class="line"></div>
+                <div class="dot"></div>
+                <div class="line"></div>
+            </div>
+            <h2>Shop by Category</h2>
+            <p>Explore our wide range of product categories</p>
+        </div>
+        <div class="row g-3">
+            @foreach (var cat in categories)
+            {
+                <div class="col-6 col-md-4 col-lg-3">
+                    <a asp-controller="Products" asp-action="Index"
+                       asp-route-categoryId="@cat.CategoryId" class="d-block">
+                        <div class="category-card">
+                            <img src="@cat.ImageUrl" alt="@cat.Name" loading="lazy" />
+                            <div class="overlay">
+                                <h5>@cat.Name</h5>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+<!-- ===== FEATURED PRODUCTS ===== -->
+<section class="section section-sky">
+    <div class="container">
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <div>
+                <div class="section-divider justify-content-start mb-2">
+                    <div class="line"></div>
+                    <div class="dot"></div>
+                </div>
+                <h2 class="fw-800 mb-0" style="font-family:'Poppins',sans-serif;font-weight:700">
+                    Featured Products
+                </h2>
+            </div>
+            <a asp-controller="Products" asp-action="Index"
+               asp-route-sort="popular" class="btn-outline-shop">
+                View All <i class="fas fa-arrow-right ms-1"></i>
+            </a>
+        </div>
+        <div class="row g-3">
+            @foreach (var p in featured)
+            {
+                <div class="col-6 col-md-4 col-lg-3">
+                    @await Html.PartialAsync("_ProductCard", p)
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+<!-- ===== BANNER ===== -->
+<section class="py-5" style="background:linear-gradient(135deg,#ec4899 0%,#f472b6 100%)">
+    <div class="container text-center text-white py-3">
+        <h2 class="fw-bold mb-2" style="font-family:'Poppins',sans-serif">
+            🛍️ Welcome to Our Store
+        </h2>
+        <p class="mb-4 opacity-75">
+            Discover the latest products with the best style and quality.
+        </p>
+        <a asp-controller="Products" asp-action="Index" class="btn-hero-primary">
+            Shop Now
+        </a>
+    </div>
+</section>
+
+<!-- ===== BEST SELLERS + NEW ARRIVALS ===== -->
+<section class="section section-light">
+    <div class="container">
+        <div class="row g-5">
+            <!-- Best Sellers -->
+            <div class="col-lg-6">
+                <div class="d-flex align-items-center justify-content-between mb-4">
+                    <h3 style="font-family:'Poppins',sans-serif;font-weight:700;font-size:1.4rem">
+                        🔥 Best Sellers
+                    </h3>
+                    <a asp-controller="Products" asp-action="Index"
+                       asp-route-sort="popular" class="text-primary fw-600" style="font-size:0.9rem">
+                        See all →
+                    </a>
+                </div>
+                <div class="row g-3">
+                    @foreach (var p in bestSellers)
+                    {
+                        <div class="col-6">
+                            @await Html.PartialAsync("_ProductCard", p)
+                        </div>
+                    }
+                </div>
+            </div>
+            <!-- New Arrivals -->
+            <div class="col-lg-6">
+                <div class="d-flex align-items-center justify-content-between mb-4">
+                    <h3 style="font-family:'Poppins',sans-serif;font-weight:700;font-size:1.4rem">
+                        ✨ New Arrivals
+                    </h3>
+                    <a asp-controller="Products" asp-action="Index"
+                       asp-route-sort="newest" class="text-primary fw-600" style="font-size:0.9rem">
+                        See all →
+                    </a>
+                </div>
+                <div class="row g-3">
+                    @foreach (var p in newArrivals)
+                    {
+                        <div class="col-6">
+                            @await Html.PartialAsync("_ProductCard", p)
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

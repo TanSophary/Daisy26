@@ -1,0 +1,113 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Daisy 26 Admin</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+</head>
+<body class="admin-body">
+
+    <div class="admin-wrapper">
+        <!-- SIDEBAR -->
+        <aside class="admin-sidebar" id="adminSidebar">
+            <div class="sidebar-brand">
+                <i class="fas fa-shopping-bag me-2"></i>
+                <span>Daisy<strong>26</strong></span>
+            </div>
+            <div class="sidebar-label">MAIN MENU</div>
+            <nav class="sidebar-nav">
+                <a asp-controller="Admin" asp-action="Dashboard"
+                   class="sidebar-link @(ViewData["Page"]?.ToString()=="Dashboard"?"active":"")">
+                    <i class="fas fa-chart-pie"></i><span>Dashboard</span>
+                </a>
+                <a asp-controller="Admin" asp-action="Products"
+                   class="sidebar-link @(ViewData["Page"]?.ToString()=="Products"?"active":"")">
+                    <i class="fas fa-shopping-bag"></i><span>Products</span>
+                </a>
+                <a asp-controller="Admin" asp-action="Categories"
+                   class="sidebar-link @(ViewData["Page"]?.ToString()=="Categories"?"active":"")">
+                    <i class="fas fa-tags"></i><span>Categories</span>
+                </a>
+                <a asp-controller="Admin" asp-action="Orders"
+                   class="sidebar-link @(ViewData["Page"]?.ToString()=="Orders"?"active":"")">
+                    <i class="fas fa-receipt"></i><span>Orders</span>
+                </a>
+                <a asp-controller="Admin" asp-action="Customers"
+                   class="sidebar-link @(ViewData["Page"]?.ToString()=="Customers"?"active":"")">
+                    <i class="fas fa-users"></i><span>Customers</span>
+                </a>
+                <a asp-controller="Admin" asp-action="Coupons"
+                   class="sidebar-link @(ViewData["Page"]?.ToString()=="Coupons"?"active":"")">
+                    <i class="fas fa-ticket-alt"></i><span>Coupons</span>
+                </a>
+                <a asp-controller="Admin" asp-action="Reviews"
+                   class="sidebar-link @(ViewData["Page"]?.ToString()=="Reviews"?"active":"")">
+                    <i class="fas fa-star"></i><span>Reviews</span>
+                </a>
+            </nav>
+            <div class="sidebar-label mt-3">STORE</div>
+            <nav class="sidebar-nav">
+                <a asp-controller="Home" asp-action="Index" target="_blank" class="sidebar-link">
+                    <i class="fas fa-external-link-alt"></i><span>View Store</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <div class="admin-main">
+            <!-- TOP BAR -->
+            <header class="admin-topbar">
+                <button class="sidebar-toggle" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="topbar-title">@ViewData["Title"]</div>
+                <div class="topbar-right">
+                    <span class="admin-badge">
+                        <i class="fas fa-user-shield me-1"></i> Admin
+                    </span>
+                </div>
+            </header>
+
+            <!-- ALERTS -->
+            <div class="px-4 pt-3">
+                @if (TempData["Success"] != null)
+                {
+                    <div class="alert-admin alert-admin-success">
+                        <i class="fas fa-check-circle me-2"></i>@TempData["Success"]
+                    </div>
+                }
+                @if (TempData["Error"] != null)
+                {
+                    <div class="alert-admin alert-admin-error">
+                        <i class="fas fa-exclamation-circle me-2"></i>@TempData["Error"]
+                    </div>
+                }
+            </div>
+
+            <!-- PAGE CONTENT -->
+            <main class="admin-content">
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('adminSidebar');
+
+            if (window.innerWidth <= 768) {
+                sidebar.classList.toggle('show');
+            } else {
+                sidebar.classList.toggle('collapsed');
+                document.querySelector('.admin-main').style.marginLeft =
+                    sidebar.classList.contains('collapsed') ? '70px' : '260px';
+            }
+        }
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,108 @@
+﻿@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Chat";
+    ViewData["Page"] = "Chat";
+    var messages = ViewBag.Messages as IEnumerable<OnlineShop.Models.ChatMessage> ?? new List<OnlineShop.Models.ChatMessage>();
+    string sessionId = ViewBag.SessionId ?? "";
+    string customerName = ViewBag.CustomerName ?? "Guest";
+    int lastId = messages.Any() ? messages.Max(m => m.ChatMessageId) : 0;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex align-items-center gap-3">
+        <a asp-action="AdminInbox" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+            <i class="fas fa-arrow-left me-1"></i>Inbox
+        </a>
+        <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--pink-400),var(--rose-400));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700">
+            @customerName[0].ToString().ToUpper()
+        </div>
+        <h5 class="fw-bold m-0" style="color:var(--pink-700)">@customerName</h5>
+        <span class="badge rounded-pill px-2" style="background:#dcfce7;color:#166534;font-size:.75rem">● Online</span>
+    </div>
+</div>
+
+<div class="bg-white rounded-3 shadow-sm d-flex flex-column" style="height:65vh">
+    <!-- Messages -->
+    <div id="chatBox" class="flex-grow-1 p-4 overflow-auto" style="display:flex;flex-direction:column;gap:10px">
+        @foreach (var m in messages)
+        {
+            <div class="d-flex @(m.IsFromAdmin ? "justify-content-end" : "justify-content-start")">
+                <div class="px-3 py-2 rounded-3" style="max-width:70%;font-size:.92rem;
+                    @(m.IsFromAdmin
+                        ? "background:#ff4da6;color:#fff;border-radius:18px 18px 4px 18px"
+                        : "background:var(--pink-50);color:var(--text);border:1px solid var(--pink-100);border-radius:18px 18px 18px 4px")">
+                    @m.Message
+                    <div style="font-size:.7rem;opacity:.65;margin-top:3px;text-align:right">@m.CreatedAt.ToString("HH:mm")</div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Input -->
+    <div class="p-3 border-top d-flex gap-2" style="border-color:var(--pink-100) !important">
+        <input type="text" id="replyInput" class="form-control rounded-pill"
+               placeholder="Type your reply..." style="border-color:var(--pink-200)"
+               onkeydown="if(event.key==='Enter')sendReply()" />
+        <button onclick="sendReply()" class="btn rounded-pill px-4 text-white fw-bold flex-shrink-0"
+                style="background:#ff4da6;white-space:nowrap">
+            <i class="fas fa-paper-plane me-1"></i>Send
+        </button>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var lastId = @lastId;
+        var sessionId = "@sessionId";
+
+        function scrollBottom() {
+            var box = document.getElementById('chatBox');
+            box.scrollTop = box.scrollHeight;
+        }
+        scrollBottom();
+
+        function appendMsg(msg, isAdmin) {
+            var box = document.getElementById('chatBox');
+            var wrap = document.createElement('div');
+            wrap.className = 'd-flex ' + (isAdmin ? 'justify-content-end' : 'justify-content-start');
+            var bubble = document.createElement('div');
+            bubble.className = 'px-3 py-2 rounded-3';
+            bubble.style.cssText = 'max-width:70%;font-size:.92rem;' +
+                (isAdmin
+                    ? 'background:#ff4da6;color:#fff;border-radius:18px 18px 4px 18px'
+                    : 'background:var(--pink-50);color:var(--text);border:1px solid var(--pink-100);border-radius:18px 18px 18px 4px');
+            var time = new Date(msg.createdAt);
+            var h = String(time.getHours()).padStart(2,'0'), m2 = String(time.getMinutes()).padStart(2,'0');
+            bubble.innerHTML = msg.message + '<div style="font-size:.7rem;opacity:.65;margin-top:3px;text-align:right">' + h + ':' + m2 + '</div>';
+            wrap.appendChild(bubble);
+            box.appendChild(wrap);
+            scrollBottom();
+        }
+
+        async function sendReply() {
+            var input = document.getElementById('replyInput');
+            var text = input.value.trim();
+            if (!text) return;
+            input.value = '';
+            var resp = await fetch('/Chat/AdminReply', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'sessionId=' + encodeURIComponent(sessionId) + '&message=' + encodeURIComponent(text)
+            });
+            var data = await resp.json();
+            if (data.success) {
+                appendMsg({ message: text, createdAt: new Date().toISOString(), isFromAdmin: true }, true);
+            }
+        }
+
+        // Poll for new user messages
+        setInterval(async function() {
+            var resp = await fetch('/Chat/AdminMessages?sessionId=' + encodeURIComponent(sessionId) + '&after=' + lastId);
+            var msgs = await resp.json();
+            msgs.forEach(function(m) {
+                appendMsg(m, m.isFromAdmin);
+                if (m.chatMessageId > lastId) lastId = m.chatMessageId;
+            });
+        }, 3000);
+    </script>
+}

@@ -1,0 +1,382 @@
+@model OnlineShop.Models.Product
+@{
+    ViewData["Title"] = Model.Name;
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var related = ViewBag.Related as List<OnlineShop.Models.Product> ?? new();
+}
+
+<div class="container py-5">
+
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb" style="font-size:0.88rem">
+            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Home</a></li>
+            <li class="breadcrumb-item"><a asp-controller="Products" asp-action="Index">Products</a></li>
+            <li class="breadcrumb-item">
+                <a asp-controller="Products" asp-action="Index" asp-route-categoryId="@Model.CategoryId">
+                    @Model.Category?.Name
+                </a>
+            </li>
+            <li class="breadcrumb-item active">@Model.Name</li>
+        </ol>
+    </nav>
+
+    <div class="row g-5 align-items-start">
+        <!-- Product Image Gallery -->
+        <div class="col-lg-5">
+            @{
+                var allImages = new List<string>();
+                if (!string.IsNullOrEmpty(Model.ImageUrl)) allImages.Add(Model.ImageUrl);
+                foreach (var pi in Model.ProductImages.OrderBy(i => i.SortOrder))
+                    if (!string.IsNullOrEmpty(pi.ImageUrl)) allImages.Add(pi.ImageUrl);
+                if (!allImages.Any()) allImages.Add("https://images.unsplash.com/photo-1586495777744-4e6232bf2fd7?w=600");
+            }
+
+            <!-- Main Image -->
+            <div class="rounded-3 overflow-hidden border mb-3" style="height:420px;background:var(--sky-50);position:relative">
+                <img id="mainProductImg"
+                     src="@allImages[0]"
+                     alt="@Model.Name" class="w-100 h-100" style="object-fit:cover;transition:opacity .2s" />
+                @if (allImages.Count > 1)
+                {
+                    <button type="button" onclick="prevImg()" style="position:absolute;left:10px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.85);border:none;border-radius:50%;width:36px;height:36px;font-size:1rem;color:var(--pink-600);box-shadow:0 2px 8px rgba(0,0,0,.15);cursor:pointer;z-index:2">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <button type="button" onclick="nextImg()" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.85);border:none;border-radius:50%;width:36px;height:36px;font-size:1rem;color:var(--pink-600);box-shadow:0 2px 8px rgba(0,0,0,.15);cursor:pointer;z-index:2">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                    <div style="position:absolute;bottom:10px;right:12px;background:rgba(0,0,0,.45);color:#fff;font-size:0.75rem;border-radius:20px;padding:2px 10px">
+                        <span id="imgCounter">1</span>/@allImages.Count
+                    </div>
+                }
+            </div>
+
+            <!-- Thumbnail Strip -->
+            @if (allImages.Count > 1)
+            {
+                <div class="d-flex gap-2 flex-wrap">
+                    @for (int ti = 0; ti < allImages.Count; ti++)
+                    {
+                        <div class="thumb-wrap" data-idx="@ti" onclick="setImg(@ti)"
+                             style="cursor:pointer;flex-shrink:0">
+                            <img src="@allImages[ti]" alt="Image @(ti+1)"
+                                 style="width:64px;height:64px;object-fit:cover;border-radius:10px;border:2px solid @(ti==0 ? "var(--pink-500)" : "var(--border)");transition:border-color .15s"
+                                 onerror="this.style.opacity=.3"
+                                 id="thumb_@ti" />
+                        </div>
+                    }
+                </div>
+            }
+
+            <script>
+                const _imgs = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(allImages));
+
+                let _cur = 0;
+
+                function setImg(i) {
+                    _cur = i;
+                    const main = document.getElementById('mainProductImg');
+                    main.style.opacity = 0;
+
+                    setTimeout(() => {
+                        main.src = _imgs[i];
+                        main.style.opacity = 1;
+                    }, 150);
+
+                    document.querySelectorAll('.thumb-wrap img').forEach((el, idx) => {
+                        el.style.borderColor = idx === i ? 'var(--pink-500)' : 'var(--border)';
+                    });
+
+                    const ctr = document.getElementById('imgCounter');
+                    if (ctr) ctr.textContent = i + 1;
+                }
+
+                function nextImg() {
+                    setImg((_cur + 1) % _imgs.length);
+                }
+
+                function prevImg() {
+                    setImg((_cur - 1 + _imgs.length) % _imgs.length);
+                }
+            </script>
+        </div>
+
+        <!-- Product Info -->
+        <div class="col-lg-7">
+            <span class="badge-cat mb-2 d-inline-block">@Model.Category?.Name</span>
+            <h1 style="font-family:'Poppins',sans-serif;font-weight:700;font-size:1.8rem;line-height:1.3">
+                @Model.Name
+            </h1>
+
+            <!-- Star Rating -->
+            <div class="d-flex align-items-center gap-2 my-3">
+                <div style="color:#fbbf24;font-size:1rem">
+                    @for (int i = 1; i <= 5; i++)
+                    {
+                        if (i <= (int)Model.Rating)
+                        { <i class="fas fa-star"></i> }
+                        else
+                        { <i class="far fa-star" style="color:#d1d5db"></i> }
+                    }
+                </div>
+                <span style="font-size:0.88rem;color:var(--muted)">
+                    @Model.Rating.ToString("0.0") · @Model.Reviews.Count() reviews
+                </span>
+            </div>
+
+            <!-- Price -->
+            <div class="d-flex align-items-center gap-3 mb-4 flex-wrap">
+                <span style="font-size:2rem;font-weight:800;color:var(--sky-600)">
+                    $@Model.Price.ToString("0.00")
+                </span>
+                @if (Model.OldPrice.HasValue)
+                {
+                    <span style="font-size:1.1rem;color:var(--muted);text-decoration:line-through">
+                        $@Model.OldPrice.Value.ToString("0.00")
+                    </span>
+                    <span class="badge" style="background:linear-gradient(135deg,#f97316,#ef4444);color:white;border-radius:50px;padding:6px 14px;font-size:0.85rem">
+                        Save @Model.DiscountPercent%
+                    </span>
+                }
+            </div>
+
+            <!-- Description -->
+            <p style="color:var(--muted);line-height:1.8;margin-bottom:24px">@Model.Description</p>
+
+            <!-- Stock (no count shown to customers) -->
+            <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+                @if (Model.Stock > 0)
+                {
+                    <span class="badge bg-success" style="font-size:0.82rem;padding:6px 12px">✓ In Stock</span>
+                }
+                else
+                {
+                    <span class="badge bg-danger" style="font-size:0.82rem;padding:6px 12px">✗ Out of Stock</span>
+                }
+                <span style="font-size:0.83rem;color:var(--muted)">Code: @Model.ProductCode</span>
+            </div>
+
+            @{
+                var colorList = (Model.Colors ?? "")
+                    .Split(',', System.StringSplitOptions.RemoveEmptyEntries)
+                    .Select(c => c.Trim())
+                    .Where(c => c.Length > 0)
+                    .ToList();
+                var colorStockMap = ViewBag.ColorStockMap as Dictionary<string, int> ?? new Dictionary<string, int>();
+            }
+
+            <!-- Color Selector -->
+            @if (colorList.Any())
+            {
+                <div class="mb-4">
+                    <div style="font-weight:700;margin-bottom:8px">Color: <span id="selectedColorLabel" style="color:var(--sky-600)">@colorList[0]</span>
+                        <span id="colorStockBadge" style="font-size:0.78rem;font-weight:600;margin-left:8px"></span>
+                    </div>
+                    <div class="d-flex flex-wrap gap-2" id="colorSwatches">
+                        @foreach (var col in colorList)
+                        {
+                            var colStock = colorStockMap.ContainsKey(col) ? colorStockMap[col] : Model.Stock;
+                            @if (colStock > 0)
+                            {
+                            <button type="button" onclick="selectColor('@col', @colStock)"
+                                    class="color-swatch-btn"
+                                    id="swatch_@col.Replace(" ","_")"
+                                    data-color="@col"
+                                    data-stock="@colStock"
+                                    style="padding:6px 16px;border-radius:50px;border:2px solid var(--border);background:#fff;font-size:0.85rem;font-weight:600;cursor:pointer;transition:all .15s">
+                                @col
+                            </button>
+                            }
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- Error message from cart -->
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger rounded-3 border-0 border-start border-danger border-4 py-2 px-3 mb-3" style="font-size:.9rem">
+                    <i class="fas fa-exclamation-circle me-2"></i>@TempData["Error"]
+                </div>
+            }
+
+            <!-- Add to Cart -->
+            <form asp-controller="Cart" asp-action="Add" method="post"
+                  class="d-flex align-items-center gap-3 flex-wrap mb-4">
+                <input type="hidden" name="productId" value="@Model.ProductId" />
+                <input type="hidden" name="color" id="selectedColorInput" value="@(colorList.FirstOrDefault() ?? "")" />
+                <div class="d-flex align-items-center border rounded-3 overflow-hidden"
+                     style="border-color:var(--border)!important">
+                    <button type="button" onclick="changeQty(-1)"
+                            style="border:none;background:var(--sky-50);font-weight:700;font-size:1.1rem;padding:8px 16px">−</button>
+                    <input type="number" name="qty" id="qtyInput" value="1" min="1" max="@Model.Stock"
+                           class="qty-input" style="border:none;border-radius:0;width:60px"
+                           oninput="validateQty(this)"
+                           data-base-max="@Model.Stock" />
+                    <button type="button" onclick="changeQty(1)"
+                            style="border:none;background:var(--sky-50);font-weight:700;font-size:1.1rem;padding:8px 16px">+</button>
+                </div>
+                <button type="submit" class="btn-primary-shop flex-fill" style="padding:12px 24px"
+                        @(Model.Stock == 0 ? "disabled" : "")>
+                    <i class="fas fa-cart-plus me-2"></i>Add to Cart
+                </button>
+            </form>
+            <div id="qtyError" style="display:none;color:#ef4444;font-size:0.85rem;margin-top:-12px;margin-bottom:12px"></div>
+
+            <!-- Trust Badges -->
+            <div class="row g-2">
+                <div class="col-4">
+                    <div class="text-center p-2 rounded-2" style="background:var(--sky-50)">
+                        <i class="fas fa-truck" style="color:var(--sky-500)"></i>
+                        <div style="font-size:0.75rem;font-weight:700;color:var(--dark);margin-top:4px">Free Delivery</div>
+                        <div style="font-size:0.7rem;color:var(--muted)">Orders over $100</div>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="text-center p-2 rounded-2" style="background:var(--sky-50)">
+                        <i class="fas fa-undo" style="color:var(--teal-500)"></i>
+                        <div style="font-size:0.75rem;font-weight:700;color:var(--dark);margin-top:4px">Easy Returns</div>
+                        <div style="font-size:0.7rem;color:var(--muted)">30-day policy</div>
+                    </div>
+                </div>
+                <div class="col-4">
+                    <div class="text-center p-2 rounded-2" style="background:var(--sky-50)">
+                        <i class="fas fa-shield-alt" style="color:var(--sky-600)"></i>
+                        <div style="font-size:0.75rem;font-weight:700;color:var(--dark);margin-top:4px">Secure Pay</div>
+                        <div style="font-size:0.7rem;color:var(--muted)">SSL protected</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reviews -->
+    @if (Model.Reviews.Any())
+    {
+        <div class="mt-5 pt-4 border-top">
+            <h3 style="font-family:'Poppins',sans-serif;font-weight:700;margin-bottom:24px">
+                Customer Reviews (@Model.Reviews.Count())
+            </h3>
+            <div class="row g-3">
+                @foreach (var r in Model.Reviews)
+                {
+                    <div class="col-md-6">
+                        <div class="bg-white rounded-3 p-4 border h-100">
+                            <div class="d-flex align-items-center gap-3 mb-3">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center"
+                                     style="width:44px;height:44px;min-width:44px;
+                                            background:linear-gradient(135deg,var(--sky-400),var(--teal-400));
+                                            color:white;font-weight:700;font-size:1.1rem">
+                                    @r.ReviewerName[0]
+                                </div>
+                                <div class="flex-fill">
+                                    <div style="font-weight:700">@r.ReviewerName</div>
+                                    <div style="color:#fbbf24">
+                                        @for (int i = 1; i <= 5; i++) { <text>@(i <= r.Rating ? "★" : "☆")</text> }
+                                    </div>
+                                </div>
+                                <span style="font-size:0.8rem;color:var(--muted);white-space:nowrap">
+                                    @r.CreatedAt.ToString("MMM dd, yyyy")
+                                </span>
+                            </div>
+                            <p class="mb-0" style="color:var(--text);font-size:0.92rem;line-height:1.7">
+                                "@r.Comment"
+                            </p>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- Related Products -->
+    @if (related.Any())
+    {
+        <div class="mt-5 pt-4 border-top">
+            <h3 style="font-family:'Poppins',sans-serif;font-weight:700;margin-bottom:24px">Related Products</h3>
+            <div class="row g-3">
+                @foreach (var p in related)
+                {
+                    <div class="col-6 col-md-3">
+                        @await Html.PartialAsync("_ProductCard", p)
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+<script>
+var _maxStock = @Model.Stock;
+
+function changeQty(delta) {
+    const input = document.getElementById('qtyInput');
+    let val = parseInt(input.value) + delta;
+    val = Math.max(1, Math.min(val, _maxStock || 99));
+    input.value = val;
+    validateQty(input);
+}
+
+function validateQty(input) {
+    const errEl = document.getElementById('qtyError');
+    const val = parseInt(input.value);
+    if (val > _maxStock) {
+        input.value = _maxStock;
+        errEl.style.display = 'block';
+        errEl.textContent = 'Maximum available quantity is ' + _maxStock + '.';
+    } else {
+        errEl.style.display = 'none';
+    }
+}
+
+function selectColor(colorName, colorStock) {
+    document.getElementById('selectedColorLabel').textContent = colorName;
+    document.getElementById('selectedColorInput').value = colorName;
+    _maxStock = colorStock;
+
+    // Update qty input
+    const qtyInput = document.getElementById('qtyInput');
+    qtyInput.max = colorStock;
+    if (parseInt(qtyInput.value) > colorStock) qtyInput.value = Math.max(1, colorStock);
+
+    // Update stock badge
+    const badge = document.getElementById('colorStockBadge');
+    if (badge) {
+        badge.textContent = '';
+        badge.style.color = '';
+    }
+
+    // Toggle Add to Cart button
+    const btn = document.querySelector('button[type="submit"].btn-primary-shop');
+    if (btn) {
+        btn.disabled = colorStock === 0;
+    }
+
+    document.querySelectorAll('.color-swatch-btn').forEach(b => {
+        b.style.borderColor = 'var(--border)';
+        b.style.background = '#fff';
+        b.style.color = 'inherit';
+    });
+    var swatchId = 'swatch_' + colorName.replace(/ /g, '_');
+    var active = document.getElementById(swatchId);
+    if (active) {
+        active.style.borderColor = 'var(--pink-500)';
+        active.style.background = 'var(--pink-500)';
+        active.style.color = '#fff';
+    }
+
+    validateQty(qtyInput);
+}
+
+// Activate first color on load
+document.addEventListener('DOMContentLoaded', function() {
+    var first = document.querySelector('.color-swatch-btn');
+    if (first) {
+        var colorName = first.getAttribute('data-color') || first.textContent.trim();
+        var stock = parseInt(first.getAttribute('data-stock') || '@Model.Stock');
+        selectColor(colorName, stock);
+    }
+});
+</script>
+}

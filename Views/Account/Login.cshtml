@@ -1,0 +1,48 @@
+﻿@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Login";
+}
+<div class="auth-page">
+    <div class="container">
+        <div class="auth-card">
+            <div class="auth-logo">Daisy<span>26</span></div>
+            <h2 class="text-center mb-1">Welcome Back</h2>
+            <p class="text-center text-muted mb-4" style="font-size:.9rem">Sign in to your account</p>
+
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger rounded-3 border-0 border-start border-danger border-4 py-2 px-3 mb-3" style="font-size:.9rem">
+                    <i class="fas fa-exclamation-circle me-2"></i>@TempData["Error"]
+                </div>
+            }
+
+            <form method="post" asp-action="Login">
+                <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Email Address</label>
+                    <input type="email" name="email" class="form-control" placeholder="you@example.com" required />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Password</label>
+                    <input type="password" name="password" class="form-control" placeholder="••••••••" required />
+                    <div class="text-end mt-1">
+                        <a asp-controller="Account" asp-action="ForgotPassword" style="font-size:0.82rem;color:var(--sky-600);text-decoration:none">
+                            Forgot password?
+                        </a>
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary-shop w-100 mt-2">
+                    <i class="fas fa-sign-in-alt me-2"></i>Login
+                </button>
+            </form>
+
+            <hr class="my-4" />
+            <p class="text-center text-muted" style="font-size:.9rem">
+                Don't have an account?
+                <a asp-controller="Account" asp-action="Register" asp-route-returnUrl="@ViewBag.ReturnUrl" class="fw-bold text-decoration-none" style="color:var(--pink-600)">
+                    Register here
+                </a>
+            </p>
+        </div>
+    </div>
+</div>

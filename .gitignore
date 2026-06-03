@@ -1,0 +1,23 @@
+﻿# Visual Studio
+.vs/
+*.user
+*.suo
+
+# Build folders
+bin/
+obj/
+
+# NuGet
+packages/
+
+# Logs
+*.log
+
+# Publish output
+publish/
+
+.vs/
+bin/
+obj/
+*.user
+*.suo

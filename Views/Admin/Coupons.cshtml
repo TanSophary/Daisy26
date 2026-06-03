@@ -1,0 +1,76 @@
+﻿@model IEnumerable<OnlineShop.Models.Coupon>
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Manage Coupons";
+    ViewData["Page"] = "Coupons";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold m-0" style="color:var(--pink-700)"><i class="fas fa-ticket-alt me-2"></i>Coupons</h4>
+    <a asp-action="CreateCoupon" class="btn btn-sm px-4 py-2 text-white fw-bold rounded-pill"
+       style="background:#ff4da6">
+        <i class="fas fa-plus me-1"></i>Add Coupon
+    </a>
+</div>
+
+<div class="table-responsive bg-white rounded-3 shadow-sm">
+    <table class="table table-hover align-middle mb-0">
+        <thead style="background:#ff4da6;color:#fff">
+            <tr>
+                <th class="px-4 py-3">Code</th>
+                <th class="py-3">Type</th>
+                <th class="py-3">Value</th>
+                <th class="py-3">Min Order</th>
+                <th class="py-3">Used / Limit</th>
+                <th class="py-3">Expiry</th>
+                <th class="py-3">Status</th>
+                <th class="py-3 pe-4 text-end">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var cp in Model)
+            {
+                <tr>
+                    <td class="px-4">
+                        <span class="badge rounded-2 px-3 py-2" style="background:var(--pink-100);color:var(--pink-700);font-family:monospace;font-size:.9rem;letter-spacing:1px">@cp.Code</span>
+                    </td>
+                    <td style="font-size:.88rem">@cp.DiscountType</td>
+                    <td class="fw-bold" style="color:var(--pink-600)">
+                        @(cp.DiscountType == "Percent" ? $"{cp.DiscountValue}%" : $"${cp.DiscountValue}")
+                    </td>
+                    <td>$@cp.MinOrderAmt.ToString("F0")</td>
+                    <td style="font-size:.88rem">@cp.UsedCount / @(cp.UsageLimit == 0 ? "∞" : cp.UsageLimit.ToString())</td>
+                    <td style="font-size:.83rem;color:var(--muted)">
+                        @(cp.ExpiryDate.HasValue ? cp.ExpiryDate.Value.ToString("dd MMM yyyy") : "No expiry")
+                    </td>
+                    <td>
+                        @if (cp.IsActive)
+                        {
+                            <span class="badge bg-success rounded-pill px-3">Active</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary rounded-pill px-3">Inactive</span>
+                        }
+                    </td>
+                    <td class="pe-4 text-end">
+                        <a asp-action="EditCoupon" asp-route-id="@cp.CouponId"
+                           class="btn btn-sm rounded-pill px-3 me-1" style="background:var(--pink-100);color:var(--pink-700);font-weight:600">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <form asp-action="DeleteCoupon" asp-route-id="@cp.CouponId" method="post" class="d-inline"
+                              onsubmit="return confirm('Delete this coupon?')">
+                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            }
+            @if (!Model.Any())
+            {
+                <tr><td colspan="8" class="text-center py-5 text-muted">No coupons yet.</td></tr>
+            }
+        </tbody>
+    </table>
+</div>

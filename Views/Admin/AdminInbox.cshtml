@@ -1,0 +1,53 @@
+﻿@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Customer Chat";
+    ViewData["Page"] = "Chat";
+    var conversations = ViewBag.Conversations as IEnumerable<dynamic> ?? new List<dynamic>();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold m-0" style="color:var(--pink-700)"><i class="fas fa-comments me-2"></i>Customer Chat</h4>
+    <span class="badge rounded-pill px-3 py-2" style="background:var(--pink-100);color:var(--pink-700)">
+        @conversations.Count() conversation(s)
+    </span>
+</div>
+
+<div class="bg-white rounded-3 shadow-sm overflow-hidden">
+    @if (!conversations.Any())
+    {
+        <div class="text-center py-5 text-muted">
+            <i class="fas fa-comment-dots fa-3x mb-3" style="color:var(--pink-200)"></i>
+            <p>No customer messages yet.</p>
+        </div>
+    }
+    else
+    {
+        @foreach (var conv in conversations)
+        {
+            <a href="/Chat/AdminConversation?sessionId=@conv.SessionId"
+               class="d-flex align-items-center p-3 text-decoration-none border-bottom hover-bg"
+               style="color:var(--text);transition:background .15s"
+               onmouseover="this.style.background='var(--pink-50)'"
+               onmouseout="this.style.background=''">
+                <div class="me-3 flex-shrink-0">
+                    <div style="width:46px;height:46px;border-radius:50%;background:linear-gradient(135deg,var(--pink-400),var(--rose-400));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:1.1rem">
+                        @(((string)(conv.CustomerName ?? "?")).Length > 0 ? ((string)(conv.CustomerName ?? "?"))[0].ToString().ToUpper() : "?")
+                    </div>
+                </div>
+                <div class="flex-grow-1 min-width-0">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-bold" style="font-size:.95rem">@(conv.CustomerName ?? "Guest")</span>
+                        <span style="font-size:.75rem;color:var(--muted)">@conv.LastTime.ToString("dd MMM HH:mm")</span>
+                    </div>
+                    <div style="font-size:.85rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:400px">
+                        @conv.LastMessage
+                    </div>
+                </div>
+                @if ((int)conv.Unread > 0)
+                {
+                    <span class="badge rounded-pill ms-3 flex-shrink-0" style="background:var(--pink-500)">@conv.Unread</span>
+                }
+            </a>
+        }
+    }
+</div>

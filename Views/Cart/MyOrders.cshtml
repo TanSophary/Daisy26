@@ -1,0 +1,117 @@
+@model List<OnlineShop.Models.Order>
+@{
+    ViewData["Title"] = "My Orders";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container py-5">
+    <h1 style="font-family:'Poppins',sans-serif;font-weight:700;margin-bottom:32px">
+        <i class="fas fa-box me-2" style="color:var(--sky-500)"></i>My Orders
+    </h1>
+
+    @if (!Model.Any())
+    {
+        <div class="text-center py-5">
+            <div style="font-size:4rem;margin-bottom:20px">📦</div>
+            <h4 style="color:var(--dark);font-family:'Poppins',sans-serif">No orders yet</h4>
+            <p class="text-muted">You haven't placed any orders yet.</p>
+            <a asp-controller="Products" asp-action="Index" class="btn-primary-shop mt-3 d-inline-block">
+                <i class="fas fa-shopping-bag me-2"></i>Start Shopping
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="d-flex flex-column gap-3">
+            @foreach (var order in Model)
+            {
+                var statusColor = order.Status switch {
+                    "Pending" => "#f59e0b",
+                    "Processing" => "#3b82f6",
+                    "Shipped" => "#8b5cf6",
+                    "Delivered" => "#10b981",
+                    "Cancelled" => "#ef4444",
+                    _ => "#6b7280"
+                };
+                var statusIcon = order.Status switch {
+                    "Pending" => "⏳",
+                    "Processing" => "⚙️",
+                    "Shipped" => "🚚",
+                    "Delivered" => "✅",
+                    "Cancelled" => "❌",
+                    _ => "📋"
+                };
+                <div class="bg-white rounded-3 border p-4" style="box-shadow:0 2px 8px rgba(0,0,0,0.05)">
+                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                        <div>
+                            <div style="font-family:'Poppins',sans-serif;font-weight:700;font-size:1rem;color:var(--dark)">
+                                @order.OrderNumber
+                            </div>
+                            <div style="font-size:0.82rem;color:var(--muted)">
+                                Placed @order.CreatedAt.ToString("dd MMM yyyy, HH:mm")
+                            </div>
+                        </div>
+                        <span class="badge rounded-pill px-3 py-2" style="background:@statusColor;font-size:0.82rem">
+                            @statusIcon @order.Status
+                        </span>
+                    </div>
+
+                    <hr style="border-color:var(--border);margin:12px 0" />
+
+                    <div class="row g-2 align-items-center">
+                        <div class="col-sm-4">
+                            <div style="font-size:0.8rem;color:var(--muted)">Items</div>
+                            <div style="font-weight:600;font-size:0.9rem">@order.OrderItems.Count item(s)</div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div style="font-size:0.8rem;color:var(--muted)">Total</div>
+                            <div style="font-weight:700;color:var(--sky-600);font-size:0.95rem">$@order.Total.ToString("F2")</div>
+                        </div>
+                        <div class="col-sm-4">
+                            <div style="font-size:0.8rem;color:var(--muted)">Payment</div>
+                            <div style="font-weight:600;font-size:0.9rem">@order.PaymentMethod</div>
+                        </div>
+                    </div>
+
+                    <!-- Progress bar -->
+                    @{
+                        var steps = new[] { "Pending", "Processing", "Shipped", "Delivered" };
+                        var currentStep = Array.IndexOf(steps, order.Status);
+                        if (order.Status == "Cancelled") currentStep = -1;
+                    }
+                    @if (order.Status != "Cancelled")
+                    {
+                        <div class="mt-3">
+                            <div class="d-flex justify-content-between position-relative" style="padding:0 10px">
+                                <div style="position:absolute;top:12px;left:10%;right:10%;height:3px;background:var(--border);z-index:0">
+                                    <div style="height:100%;background:var(--sky-400);width:@(currentStep == 0 ? "0%" : currentStep == 1 ? "33%" : currentStep == 2 ? "66%" : "100%");transition:width 0.4s"></div>
+                                </div>
+                                @foreach (var (step, idx) in steps.Select((s, i) => (s, i)))
+                                {
+                                    var done = idx <= currentStep;
+                                    <div class="d-flex flex-column align-items-center" style="z-index:1;min-width:0;flex:1">
+                                        <div style="width:24px;height:24px;border-radius:50%;background:@(done ? "var(--sky-500)" : "white");border:2px solid @(done ? "var(--sky-500)" : "var(--border)");display:flex;align-items:center;justify-content:center;margin-bottom:4px">
+                                            @if (done)
+                                            {
+                                                <i class="fas fa-check" style="color:white;font-size:10px"></i>
+                                            }
+                                        </div>
+                                        <span style="font-size:0.68rem;color:@(done ? "var(--sky-600)" : "var(--muted)");font-weight:@(done ? "700" : "400");text-align:center">@step</span>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    <div class="mt-3">
+                        <a asp-action="MyOrderDetail" asp-route-id="@order.OrderId"
+                           class="btn btn-sm"
+                           style="background:var(--sky-100);color:var(--sky-600);border:1.5px solid var(--sky-200);border-radius:8px;font-weight:600;font-size:0.82rem">
+                            <i class="fas fa-eye me-1"></i>View Details
+                        </a>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

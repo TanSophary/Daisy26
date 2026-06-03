@@ -1,0 +1,59 @@
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Enter OTP";
+}
+<div class="auth-page">
+    <div class="container">
+        <div class="auth-card">
+            <div class="auth-logo">Pink<span>Daisy</span></div>
+            <div class="text-center mb-4">
+                <div style="width:64px;height:64px;background:linear-gradient(135deg,var(--pink-500),var(--sky-500));border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px">
+                    <i class="fas fa-shield-alt" style="color:#fff;font-size:1.5rem"></i>
+                </div>
+                <h2 class="mb-1">Enter OTP</h2>
+                <p class="text-muted" style="font-size:.9rem">Enter the 6-digit code sent to your email. It expires in 10 minutes.</p>
+            </div>
+
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger rounded-3 border-0 border-start border-danger border-4 py-2 px-3 mb-3" style="font-size:.9rem">
+                    <i class="fas fa-exclamation-circle me-2"></i>@TempData["Error"]
+                </div>
+            }
+
+            <form method="post" asp-action="VerifyOtp">
+                <div class="mb-4">
+                    <label class="form-label fw-bold text-center d-block">6-Digit OTP Code</label>
+                    <input type="text" name="otp" class="form-control text-center"
+                           style="font-size:2rem;font-weight:800;letter-spacing:12px;padding:14px"
+                           maxlength="6" pattern="\d{6}" placeholder="------" required
+                           autocomplete="one-time-code" inputmode="numeric" />
+                </div>
+                <button type="submit" class="btn-primary-shop w-100">
+                    <i class="fas fa-check-circle me-2"></i>Verify OTP
+                </button>
+            </form>
+
+            <hr class="my-4" />
+            <p class="text-center text-muted" style="font-size:.9rem">
+                Didn't receive the code?
+                <a asp-controller="Account" asp-action="ForgotPassword" class="fw-bold text-decoration-none" style="color:var(--pink-600)">
+                    Resend OTP
+                </a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Auto-focus OTP input and allow only digits
+    document.addEventListener('DOMContentLoaded', function () {
+        var inp = document.querySelector('input[name="otp"]');
+        if (inp) {
+            inp.focus();
+            inp.addEventListener('input', function () {
+                this.value = this.value.replace(/\D/g, '').slice(0, 6);
+            });
+        }
+    });
+</script>

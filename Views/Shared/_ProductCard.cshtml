@@ -1,0 +1,56 @@
+@model OnlineShop.Models.Product
+@{
+    string stars = string.Concat(Enumerable.Range(1, 5).Select(i =>
+        i <= (int)Model.Rating ? "★" : "☆"));
+}
+
+<div class="product-card h-100">
+    <div class="product-img">
+        <img src="@(Model.ImageUrl ?? "https://images.unsplash.com/photo-1586495777744-4e6232bf2fd7?w=400")"
+             alt="@Model.Name" loading="lazy" />
+
+        @if (Model.IsOnSale)
+        {
+            <span class="badge-sale">-@Model.DiscountPercent%</span>
+        }
+
+        <div class="quick-actions">
+            <a asp-controller="Products" asp-action="Detail" asp-route-id="@Model.ProductId">
+                <button title="Quick View"><i class="fas fa-eye"></i></button>
+            </a>
+            <form asp-controller="Products" asp-action="Detail" asp-route-id="@Model.ProductId" method="post">
+                <input type="hidden" name="productId" value="@Model.ProductId" />
+                <input type="hidden" name="qty" value="1" />
+                <button type="submit" title="Add to Cart">
+                    <i class="fas fa-cart-plus"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="product-body">
+        <div class="category-label">@Model.Category?.Name</div>
+        <div class="product-name">@Model.Name</div>
+
+        <div class="stars">
+            <span>@stars</span>
+        </div>
+
+        <div class="price-row">
+            <div>
+                <span class="price">$@Model.Price.ToString("0.00")</span>
+                @if (Model.OldPrice.HasValue)
+                {
+                    <span class="old-price">$@Model.OldPrice.Value.ToString("0.00")</span>
+                }
+            </div>
+            <form asp-controller="Products" asp-action="Detail" asp-route-id="@Model.ProductId" method="post">
+                <input type="hidden" name="productId" value="@Model.ProductId" />
+                <input type="hidden" name="qty" value="1" />
+                <button type="submit" class="btn-add-cart">
+                    <i class="fas fa-cart-plus me-1"></i>Add
+                </button>
+            </form>
+        </div>
+    </div>
+</div>

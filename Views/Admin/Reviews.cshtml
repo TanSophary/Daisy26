@@ -1,0 +1,93 @@
+﻿@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Manage Reviews";
+    ViewData["Page"] = "Reviews";
+    var reviews = ViewBag.Reviews as IEnumerable<OnlineShop.Models.Review> ?? new List<OnlineShop.Models.Review>();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold m-0" style="color:var(--pink-700)"><i class="fas fa-star me-2"></i>Reviews</h4>
+</div>
+
+<div class="table-responsive bg-white rounded-3 shadow-sm">
+    <table class="table table-hover align-middle mb-0">
+        <thead style="background:#ff4da6;color:#fff">
+            <tr>
+                <th class="px-4 py-3">Product</th>
+                <th class="py-3">Reviewer</th>
+                <th class="py-3">Rating</th>
+                <th class="py-3">Comment</th>
+                <th class="py-3">Date</th>
+                <th class="py-3">Status</th>
+                <th class="py-3 pe-4 text-end">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var r in reviews)
+            {
+                <tr>
+                    <td class="px-4 fw-bold" style="font-size:.88rem">@(r.Product?.Name ?? "—")</td>
+                    <td style="font-size:.88rem">@r.ReviewerName</td>
+                    <td>
+                        <span style="color:#fbbf24">
+                            @for (int i = 0; i < r.Rating; i++)
+                            {
+                                <text>★</text>
+                            }
+                            @for (int i = r.Rating; i < 5; i++)
+                            {
+                                <text>☆</text>
+                            }
+                        </span>
+                    </td>
+                    <td style="font-size:.85rem;max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                        @r.Comment
+                    </td>
+                    <td style="font-size:.83rem;color:var(--muted)">@r.CreatedAt.ToString("dd MMM yyyy")</td>
+                    <td>
+                        @if (r.IsApproved)
+                        {
+                            <span class="badge bg-success rounded-pill px-3">Approved</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-warning text-dark rounded-pill px-3">Pending</span>
+                        }
+                    </td>
+                    <td class="pe-4 text-end">
+                        @if (!r.IsApproved)
+                        {
+                            <form asp-action="ApproveReview" asp-route-id="@r.ReviewId" method="post" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-outline-success rounded-pill px-3 me-1">
+                                    <i class="fas fa-check me-1"></i>Approve
+                                </button>
+                            </form>
+                        }
+                        <form asp-action="DeleteReview" asp-route-id="@r.ReviewId" method="post" class="d-inline"
+                              onsubmit="return confirm('Delete this review?')">
+                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            }
+            @if (!reviews.Any())
+            {
+                <tr><td colspan="7" class="text-center py-5 text-muted">No reviews yet.</td></tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@if ((int)(ViewBag.TotalPages ?? 1) > 1)
+{
+    <div class="d-flex gap-2 mt-3 justify-content-center">
+        @for (int p = 1; p <= (int)ViewBag.TotalPages; p++)
+        {
+            <a asp-action="Reviews" asp-route-page="@p"
+               class="btn btn-sm rounded-circle @(p == (int)ViewBag.Page ? "text-white" : "btn-outline-secondary")"
+               style="@(p == (int)ViewBag.Page ? "background:var(--pink-500);border:none;width:36px;height:36px" : "width:36px;height:36px")">@p</a>
+        }
+    </div>
+}

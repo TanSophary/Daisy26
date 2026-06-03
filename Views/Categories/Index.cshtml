@@ -1,0 +1,59 @@
+﻿@model IEnumerable<OnlineShop.Models.Category>
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Shop by Category";
+}
+
+<div class="hero" style="padding:50px 0">
+    <div class="container hero-content text-center">
+        <h1 style="font-size:2.2rem">Shop by <span>Category</span></h1>
+        <p>Explore our curated collections — find exactly what you're looking for</p>
+    </div>
+</div>
+
+<div class="categories-page">
+    <div class="container">
+        @if (!Model.Any())
+        {
+            <div class="text-center py-5 text-muted">
+                <i class="fas fa-tags fa-3x mb-3" style="color:var(--pink-200)"></i>
+                <h5>No categories available yet</h5>
+            </div>
+        }
+        else
+        {
+            <div class="row g-4">
+                @foreach (var cat in Model)
+                {
+                    int count = cat.Products?.Count() ?? 0;
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <a asp-controller="Products" asp-action="Index" asp-route-category="@cat.CategoryId"
+                           class="category-grid-card">
+                            <div class="cat-img">
+                                @if (!string.IsNullOrEmpty(cat.ImageUrl))
+                                {
+                                    <img src="@cat.ImageUrl" alt="@cat.Name" onerror="this.style.display='none'" />
+                                }
+                                else
+                                {
+                                    <i class="fas fa-tags" style="color:var(--pink-400)"></i>
+                                }
+                            </div>
+                            <div class="cat-body">
+                                <div class="cat-name">@cat.Name</div>
+                                <div class="cat-count">@count product@(count != 1 ? "s" : "")</div>
+                                @if (!string.IsNullOrEmpty(cat.Description))
+                                {
+                                    <p style="font-size:.82rem;color:var(--muted);margin-top:6px;margin-bottom:0;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">@cat.Description</p>
+                                }
+                                <div class="cat-arrow">
+                                    Browse <i class="fas fa-arrow-right"></i>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>

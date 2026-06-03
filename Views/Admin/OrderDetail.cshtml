@@ -1,0 +1,161 @@
+﻿@model OnlineShop.Models.Order
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Order Detail";
+    ViewData["Page"] = "Orders";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="fw-bold m-0" style="color:var(--pink-700)"><i class="fas fa-receipt me-2"></i>@Model.OrderNumber</h4>
+    <a asp-action="Orders" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+        <i class="fas fa-arrow-left me-1"></i>Back
+    </a>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="bg-white rounded-3 shadow-sm p-4 mb-4">
+            <h6 class="fw-bold mb-3" style="color:var(--pink-700)">Order Items</h6>
+            <table class="table align-middle">
+                <thead class="table-light">
+                    <tr><th>Product</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.OrderItems)
+                    {
+                        <tr>
+                            <td>
+                                @if (!string.IsNullOrEmpty(item.ProductImage))
+                                {
+                                    <img src="@item.ProductImage" style="width:40px;height:40px;object-fit:cover;border-radius:8px;margin-right:10px" onerror="this.style.display='none'" />
+                                }
+                                <strong>@item.ProductName</strong>
+                                @if (!string.IsNullOrEmpty(item.Color))
+                                {
+                                    <span style="display:inline-flex;align-items:center;gap:4px;background:#fff0f6;border:1.5px solid #f8c8dc;color:#c0406e;border-radius:50px;padding:1px 8px;font-size:0.75rem;font-weight:600;margin-left:6px;vertical-align:middle">
+                                        <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:@item.Color;border:1px solid rgba(0,0,0,0.15);flex-shrink:0"></span>
+                                        @item.Color
+                                    </span>
+                                }
+                            </td>
+                            <td>@item.Quantity</td>
+                            <td>$@item.UnitPrice.ToString("F2")</td>
+                            <td class="fw-bold">$@item.TotalPrice.ToString("F2")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="bg-white rounded-3 shadow-sm p-4">
+            <h6 class="fw-bold mb-3" style="color:var(--pink-700)">Update Status</h6>
+            <form asp-action="UpdateOrderStatus" asp-route-id="@Model.OrderId" method="post" class="row g-3">
+                <div class="col-md-5">
+                    <label class="form-label fw-bold small">Order Status</label>
+                    <select name="status" class="form-select">
+                        @foreach (var s in new[] { "Pending", "Processing", "Shipped", "Delivered", "Cancelled" })
+                        {
+                            <option value="@s" selected="@(Model.Status == s ? "selected" : null)">@s</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-5">
+                    <label class="form-label fw-bold small">Payment Status</label>
+                    <select name="paymentStatus" class="form-select">
+                        @foreach (var s in new[] { "Pending", "Paid", "Failed", "Refunded" })
+                        {
+                            <option value="@s" selected="@(Model.PaymentStatus == s ? "selected" : null)">@s</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn w-100 text-white fw-bold rounded-pill"
+                            style="background:#ff4da6">
+                        Save
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="bg-white rounded-3 shadow-sm p-4 mb-3">
+            <h6 class="fw-bold mb-3" style="color:var(--pink-700)">Customer Info</h6>
+            <p class="mb-1"><strong>Name:</strong> @Model.ShipName</p>
+            <p class="mb-1"><strong>Phone:</strong> @Model.ShipPhone</p>
+            <p class="mb-1"><strong>Address:</strong> @Model.ShipAddress</p>
+            @if (!string.IsNullOrEmpty(Model.Note))
+            {
+                <p class="mb-1"><strong>Note:</strong> @Model.Note</p>
+            }
+            @if (Model.LocationLat.HasValue && Model.LocationLng.HasValue)
+            {
+                <div class="mt-2">
+                    <div class="fw-bold small mb-1" style="color:var(--pink-700)"><i class="fas fa-map-marker-alt me-1"></i>Delivery Location</div>
+                    <div id="adminMap" style="width:100%;height:200px;border-radius:10px;border:1.5px solid #f0d6e0;overflow:hidden"></div>
+                    <a href="https://www.google.com/maps?q=@Model.LocationLat,@Model.LocationLng" target="_blank"
+                       class="btn btn-sm mt-2" style="background:#fff0f6;color:var(--pink-700);border:1px solid #f0d6e0;border-radius:8px;font-size:0.8rem;font-weight:600">
+                        <i class="fas fa-external-link-alt me-1"></i>Open in Google Maps
+                    </a>
+                </div>
+                <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU3LKo&callback=initAdminMap" async defer></script>
+                <script>
+                    function initAdminMap() {
+                        const lat = @Model.LocationLat;
+                        const lng = @Model.LocationLng;
+                        const map = new google.maps.Map(document.getElementById('adminMap'), {
+                            center: { lat, lng }, zoom: 15, mapTypeControl: false, streetViewControl: false, zoomControl: false
+                        });
+                        new google.maps.Marker({ position: { lat, lng }, map, title: 'Delivery Location' });
+                    }
+                </script>
+            }
+        </div>
+        <div class="bg-white rounded-3 shadow-sm p-4">
+            <h6 class="fw-bold mb-3" style="color:var(--pink-700)">Order Summary</h6>
+            <div class="d-flex justify-content-between mb-1"><span>Subtotal</span><span>$@Model.SubTotal.ToString("F2")</span></div>
+            @if (Model.Discount > 0)
+            {
+                <div class="d-flex justify-content-between mb-1 text-success"><span>Discount</span><span>-$@Model.Discount.ToString("F2")</span></div>
+            }
+            <div class="d-flex justify-content-between mb-1"><span>Shipping</span><span>$@Model.ShippingFee.ToString("F2")</span></div>
+            <hr />
+            <div class="d-flex justify-content-between fw-bold" style="color:var(--pink-600)">
+                <span>Total</span><span>$@Model.Total.ToString("F2")</span>
+            </div>
+            <hr />
+            <p class="mb-1"><strong>Payment:</strong> @Model.PaymentMethod</p>
+            <p class="mb-1"><strong>Delivery:</strong> @Model.DeliveryMethod</p>
+            <p class="mb-1">
+                <strong>Pay Status:</strong>
+                <span class="badge @(Model.PaymentStatus == "Paid" ? "bg-success" : "bg-warning text-dark") rounded-pill">@Model.PaymentStatus</span>
+            </p>
+            <p class="mb-0 text-muted small">Ordered: @Model.CreatedAt.ToString("dd MMM yyyy HH:mm")</p>
+
+            @if (!string.IsNullOrEmpty(Model.InvoicePath))
+            {
+                <hr />
+                <div>
+                    <div class="fw-bold small mb-2" style="color:var(--pink-700)">
+                        <i class="fas fa-file-invoice me-1"></i>Payment Invoice
+                    </div>
+                    @if (Model.InvoicePath.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+                    {
+                        <a href="@Model.InvoicePath" target="_blank"
+                           class="btn btn-sm" style="background:#fff0f6;color:var(--pink-700);border:1px solid #f0d6e0;border-radius:8px;font-size:0.8rem;font-weight:600">
+                            <i class="fas fa-file-pdf me-1"></i>View PDF Invoice
+                        </a>
+                    }
+                    else
+                    {
+                        <a href="@Model.InvoicePath" target="_blank">
+                            <img src="@Model.InvoicePath" alt="Payment Invoice"
+                                 style="width:100%;max-width:280px;border-radius:10px;border:2px solid #f0d6e0;cursor:zoom-in" />
+                        </a>
+                        <div class="mt-1" style="font-size:0.73rem;color:#999">Click image to view full size</div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>

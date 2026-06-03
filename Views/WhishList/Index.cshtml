@@ -1,0 +1,66 @@
+﻿@model IEnumerable<OnlineShop.Models.Wishlist>
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "My Wishlist";
+}
+
+<div class="container" style="padding:40px 0">
+    <h2 class="fw-bold mb-4" style="color:var(--dark)">
+        <i class="fas fa-heart me-2" style="color:var(--pink-500)"></i>My Wishlist
+        @if (Model.Any())
+        {
+            <span class="badge rounded-pill ms-2" style="background:var(--pink-100);color:var(--pink-700);font-size:.75rem">@Model.Count() items</span>
+        }
+    </h2>
+
+    @if (!Model.Any())
+    {
+        <div class="wishlist-empty">
+            <i class="fas fa-heart-broken d-block"></i>
+            <h5 class="mt-3">Your wishlist is empty</h5>
+            <p>Save items you love and come back to them anytime.</p>
+            <a asp-controller="Products" asp-action="Index" class="btn-primary-shop mt-3 d-inline-block">
+                <i class="fas fa-shopping-bag me-2"></i>Browse Products
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var w in Model)
+            {
+                var p = w.Product;
+                <div class="col-6 col-md-4 col-lg-3">
+                    <div class="product-card">
+                        <div class="product-img">
+                            <a asp-controller="Products" asp-action="Detail" asp-route-id="@p!.ProductId">
+                                <img src="@(string.IsNullOrEmpty(p.ImageUrl) ? "https://placehold.co/400x300/fce7f3/ec4899?text=No+Image" : p.ImageUrl)"
+                                     alt="@p.Name" onerror="this.src='https://placehold.co/400x300/fce7f3/ec4899?text=No+Image'" />
+                            </a>
+                        </div>
+                        <div class="product-body">
+                            <div class="category-label">@(p.Category?.Name ?? "")</div>
+                            <div class="product-name">
+                                <a asp-controller="Products" asp-action="Detail" asp-route-id="@p.ProductId" class="text-decoration-none text-dark">@p.Name</a>
+                            </div>
+                            <div class="price-row mt-auto">
+                                <span class="price">$@p.Price.ToString("F2")</span>
+                                <div class="d-flex gap-2">
+                                    <form asp-controller="Cart" asp-action="Add" method="post">
+                                        <input type="hidden" name="productId" value="@p.ProductId" />
+                                        <button type="submit" class="btn-add-cart"><i class="fas fa-cart-plus me-1"></i>Add</button>
+                                    </form>
+                                    <form asp-controller="Wishlist" asp-action="Remove" asp-route-wishlistId="@w.WishlistId" method="post">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill" title="Remove">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

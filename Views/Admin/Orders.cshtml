@@ -1,0 +1,111 @@
+﻿@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Manage Orders";
+    ViewData["Page"] = "Orders";
+
+    var orders = ViewData["Orders"] as IEnumerable<OnlineShop.Models.Order>
+                 ?? new List<OnlineShop.Models.Order>();
+
+    int currentPage = ViewData["CurrentPage"] as int? ?? 1;
+    int totalPages = ViewData["TotalPages"] as int? ?? 1;
+    string? currentStatus = ViewData["Status"] as string;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <h4 class="fw-bold m-0" style="color:var(--pink-700)">
+        <i class="fas fa-receipt me-2"></i>Orders
+    </h4>
+
+    <div class="d-flex gap-2 flex-wrap">
+        @foreach (var s in new[] { "Pending", "Processing", "Shipped", "Delivered", "Cancelled" })
+        {
+            <a asp-action="Orders" asp-route-status="@s"
+               class="btn btn-sm rounded-pill @(currentStatus == s ? "text-white" : "btn-outline-secondary")"
+               style="@(currentStatus == s ? "background:#ff4da6;border:none" : "")">@s</a>
+        }
+        @if (currentStatus != null)
+        {
+            <a asp-action="Orders" class="btn btn-sm btn-outline-secondary rounded-pill">All</a>
+        }
+    </div>
+</div>
+
+<div class="table-responsive bg-white rounded-3 shadow-sm">
+    <table class="table table-hover align-middle mb-0">
+        <thead style="background:#ff4da6;color:#fff">
+            <tr>
+                <th class="px-4 py-3">Order #</th>
+                <th class="py-3">Customer</th>
+                <th class="py-3">Phone</th>
+                <th class="py-3">Total</th>
+                <th class="py-3">Payment</th>
+                <th class="py-3">Status</th>
+                <th class="py-3">Date</th>
+                <th class="py-3 pe-4">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var o in orders)
+            {
+                <tr>
+                    <td class="px-4 fw-bold" style="color:var(--pink-600)">@o.OrderNumber</td>
+                    <td>@o.ShipName</td>
+                    <td style="font-size:.88rem">@o.ShipPhone</td>
+                    <td class="fw-bold">$@o.Total.ToString("F2")</td>
+                    <td style="font-size:.85rem">@o.PaymentMethod</td>
+                    <td>
+                        @{
+                            var bg = o.Status switch
+                            {
+                                "Delivered" => "#dcfce7",
+                                "Shipped" => "#dbeafe",
+                                "Cancelled" => "#fee2e2",
+                                "Processing" => "#fef9c3",
+                                _ => "#fce7f3"
+                            };
+                            var col = o.Status switch
+                            {
+                                "Delivered" => "#166534",
+                                "Shipped" => "#1d4ed8",
+                                "Cancelled" => "#991b1b",
+                                "Processing" => "#854d0e",
+                                _ => "#9d174d"
+                            };
+                        }
+                        <span class="badge rounded-pill px-3 py-1" style="background:@bg;color:@col;font-size:.8rem">@o.Status</span>
+                    </td>
+                    <td style="font-size:.83rem;color:var(--muted)">@o.CreatedAt.ToString("dd MMM yyyy")</td>
+                    <td class="pe-4">
+                        <a asp-action="OrderDetail" asp-route-id="@o.OrderId"
+                           class="btn btn-sm rounded-pill px-3"
+                           style="background:var(--pink-100);color:var(--pink-700);font-weight:600">
+                            <i class="fas fa-eye me-1"></i>View
+                        </a>
+                    </td>
+                </tr>
+            }
+            @if (!orders.Any())
+            {
+                <tr><td colspan="8" class="text-center py-5 text-muted">No orders found.</td></tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@if (totalPages > 1)
+{
+    <div class="d-flex gap-2 mt-3 justify-content-center">
+        @for (int p = 1; p <= totalPages; p++)
+        {
+            bool isActive = (p == currentPage);
+
+            <a asp-action="Orders"
+               asp-route-page="@p"
+               asp-route-status="@currentStatus"
+               class="btn btn-sm rounded-circle @(isActive ? "text-white" : "btn-outline-secondary")"
+               style="@(isActive ? "background:var(--pink-500);border:none;width:36px;height:36px" : "width:36px;height:36px")">
+                @p
+            </a>
+        }
+    </div>
+}

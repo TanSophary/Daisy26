@@ -1,0 +1,54 @@
+﻿@model OnlineShop.Models.Category
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Edit Category";
+    ViewData["Page"] = "Categories";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="bg-white rounded-3 shadow-sm p-4">
+            <h5 class="fw-bold mb-4" style="color:var(--pink-700)"><i class="fas fa-edit me-2"></i>Edit Category</h5>
+            <form asp-action="EditCategory" asp-route-id="@Model.CategoryId" method="post">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger rounded-3" style="font-size:.88rem"></div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Category Code</label>
+                    <input value="@Model.CategoryCode" class="form-control" readonly
+                           style="background:#f9fafb;color:#db2777;font-family:monospace;font-weight:700;max-width:120px" />
+                    <div class="text-muted small">Auto-generated — cannot be changed</div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Category Name *</label>
+                    <input asp-for="Name" class="form-control" required />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Description</label>
+                    <textarea asp-for="Description" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Image URL</label>
+                    <input asp-for="ImageUrl" class="form-control" />
+                    @if (!string.IsNullOrEmpty(Model.ImageUrl))
+                    {
+                        <img src="@Model.ImageUrl" class="mt-2 rounded-2" style="height:80px;object-fit:cover" onerror="this.style.display='none'" />
+                    }
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Sort Order</label>
+                    <input asp-for="SortOrder" type="number" class="form-control" />
+                </div>
+                <div class="mb-4 form-check">
+                    <input asp-for="IsActive" class="form-check-input" type="checkbox" />
+                    <label asp-for="IsActive" class="form-check-label fw-bold">Active</label>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn text-white fw-bold rounded-pill px-4"
+                            style="background:#ff4da6">
+                        <i class="fas fa-save me-1"></i>Update Category
+                    </button>
+                    <a asp-action="Categories" class="btn btn-outline-secondary rounded-pill px-4">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
